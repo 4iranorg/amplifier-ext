@@ -1,0 +1,317 @@
+// ==========================================================================
+// Dashboard Styles
+// ==========================================================================
+// Full settings and activity page styles.
+
+@use '../variables' as *;
+@use '../mixins' as *;
+@use '../base' as base;
+@use '../buttons';
+@use '../forms';
+@use '../toggles';
+@use '../stats';
+@use '../panels';
+
+// --------------------------------------------------------------------------
+// Font Import
+// --------------------------------------------------------------------------
+@import 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap';
+
+// --------------------------------------------------------------------------
+// Body
+// --------------------------------------------------------------------------
+body {
+  @include base.body-base;
+
+  min-height: 100vh;
+}
+
+// --------------------------------------------------------------------------
+// Container
+// --------------------------------------------------------------------------
+.dashboard-container {
+  max-width: $dashboard-max-width;
+  margin: 0 auto;
+  padding: 0;
+}
+
+// --------------------------------------------------------------------------
+// Header
+// --------------------------------------------------------------------------
+.dashboard-header {
+  background: var(--surface-secondary);
+  border-bottom: 1px solid var(--border-primary);
+  position: sticky;
+  top: 0;
+  z-index: $z-sticky;
+}
+
+.header-container {
+  max-width: $dashboard-max-width;
+  margin: 0 auto;
+  padding: $spacing-xl $spacing-3xl;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  @include breakpoint-down($breakpoint-md) {
+    padding: $spacing-lg $spacing-xl;
+    flex-direction: column;
+    gap: $spacing-sm;
+    text-align: center;
+  }
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  text-decoration: none;
+  color: inherit;
+}
+
+.dashboard-header h1 {
+  font-size: $font-size-3xl;
+  font-weight: $font-weight-semibold;
+  letter-spacing: $letter-spacing-normal;
+  color: var(--text-primary);
+}
+
+.header-flag {
+  border-radius: 4px;
+}
+
+.header-slogan {
+  font-size: $font-size-base;
+  color: var(--text-secondary);
+  font-weight: $font-weight-normal;
+  font-style: italic;
+
+  @include breakpoint-down($breakpoint-md) {
+    font-size: $font-size-md;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Main Content
+// --------------------------------------------------------------------------
+.dashboard-main {
+  padding: $spacing-3xl;
+
+  @include breakpoint-down($breakpoint-md) {
+    padding: $spacing-xl;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Sections
+// --------------------------------------------------------------------------
+.dashboard-section {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-lg;
+  padding: $spacing-2xl $spacing-3xl;
+  margin-bottom: $spacing-2xl;
+
+  @include breakpoint-down($breakpoint-md) {
+    padding: $spacing-xl;
+  }
+
+  h2 {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-semibold;
+    margin-bottom: $spacing-xl;
+    letter-spacing: $letter-spacing-normal;
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+  }
+}
+
+.section-intro {
+  font-size: $font-size-md;
+  color: var(--text-secondary);
+  margin-bottom: $spacing-xl;
+  line-height: $line-height-normal;
+
+  a {
+    color: $accent-500;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+// --------------------------------------------------------------------------
+// Section Actions (responsive)
+// --------------------------------------------------------------------------
+.section-actions {
+  @include breakpoint-down($breakpoint-md) {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Spread the Word Section
+// --------------------------------------------------------------------------
+.spread-section {
+  text-align: center;
+  padding: $spacing-5xl $spacing-3xl;
+  background: var(--surface-primary);
+  max-width: $dashboard-max-width;
+  margin: 0 auto;
+
+  h2 {
+    font-size: 24px;
+    font-weight: $font-weight-bold;
+    margin-bottom: $spacing-sm;
+    color: var(--text-primary);
+  }
+
+  p {
+    font-size: $font-size-base;
+    color: var(--text-secondary);
+    margin-bottom: $spacing-2xl;
+  }
+
+  .spread-buttons {
+    display: flex;
+    justify-content: center;
+    gap: $spacing-md;
+    flex-wrap: wrap;
+  }
+
+  .spread-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: 12px 20px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-primary);
+    border-radius: $radius-full;
+    color: var(--text-primary);
+    font-size: $font-size-base;
+    font-weight: $font-weight-medium;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all $transition-base;
+    font-family: inherit;
+
+    &:hover {
+      background: var(--surface-secondary);
+      border-color: $accent-500;
+      color: $accent-500;
+    }
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+}
+
+// --------------------------------------------------------------------------
+// Footer
+// --------------------------------------------------------------------------
+.dashboard-footer {
+  background: var(--surface-secondary);
+  border-top: 1px solid var(--border-primary);
+  padding: 0;
+  margin-top: $spacing-5xl;
+}
+
+.footer-content {
+  max-width: $dashboard-max-width;
+  margin: 0 auto;
+  padding: 36px $spacing-3xl;
+
+  @include breakpoint-down($breakpoint-md) {
+    padding: $spacing-4xl $spacing-xl $spacing-2xl;
+  }
+}
+
+.footer-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  @include breakpoint-down($breakpoint-md) {
+    flex-direction: column;
+    gap: $spacing-lg;
+    text-align: center;
+  }
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+
+.footer-title {
+  font-size: $font-size-4xl;
+  font-weight: $font-weight-semibold;
+  color: var(--text-primary);
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: $spacing-2xl;
+
+  a {
+    font-size: $font-size-base;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color $transition-base;
+
+    &:hover {
+      color: var(--text-primary);
+    }
+  }
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--border-primary);
+  padding: $spacing-xl $spacing-3xl;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: $dashboard-max-width;
+  margin: 0 auto;
+
+  @include breakpoint-down($breakpoint-md) {
+    flex-direction: column;
+    gap: $spacing-md;
+    text-align: center;
+    padding-left: $spacing-xl;
+    padding-right: $spacing-xl;
+  }
+}
+
+.footer-solidarity {
+  font-size: $font-size-md;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.heart-icon {
+  color: $red-500;
+  flex-shrink: 0;
+  animation: heartbeat 1.44s ease-in-out infinite;
+}
+
+.footer-copyright {
+  font-size: $font-size-sm + 1;
+  color: var(--text-secondary);
+}
+
+// --------------------------------------------------------------------------
+// Scrollbar
+// --------------------------------------------------------------------------
+@include base.global-scrollbar;

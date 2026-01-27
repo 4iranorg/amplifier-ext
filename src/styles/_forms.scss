@@ -1,0 +1,355 @@
+// ==========================================================================
+// Forms
+// ==========================================================================
+// Form elements used across all pages.
+
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// --------------------------------------------------------------------------
+// Form Group
+// --------------------------------------------------------------------------
+.form-group {
+  margin-bottom: $spacing-base;
+
+  label {
+    display: block;
+    font-size: $font-size-sm + 1;
+    font-weight: $font-weight-semibold;
+    color: var(--text-secondary);
+    margin-bottom: $spacing-sm;
+  }
+
+  // Text inputs
+  input,
+  select,
+  textarea {
+    @include input-base;
+  }
+
+  // Textarea specific
+  textarea {
+    resize: vertical;
+    min-height: 120px;
+    font-family: $font-family-mono;
+    font-size: $font-size-sm + 1;
+    line-height: $line-height-relaxed;
+  }
+
+  // Select specific
+  select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right $radius-md center;
+    padding-right: 36px;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Hint Text
+// --------------------------------------------------------------------------
+.hint {
+  font-size: $font-size-sm;
+  color: var(--text-secondary);
+  margin-top: $spacing-sm;
+  line-height: $line-height-normal;
+
+  a {
+    color: $accent-500;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+// --------------------------------------------------------------------------
+// Input with Button
+// --------------------------------------------------------------------------
+.input-with-button {
+  display: flex;
+  gap: $spacing-sm;
+
+  input {
+    flex: 1;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Checkbox & Radio Base
+// --------------------------------------------------------------------------
+input[type='checkbox'],
+input[type='radio'] {
+  width: 20px;
+  height: 20px;
+  accent-color: $accent-500;
+  cursor: pointer;
+}
+
+// --------------------------------------------------------------------------
+// Form Row (side-by-side form groups)
+// --------------------------------------------------------------------------
+.form-row {
+  display: flex;
+  gap: $spacing-lg;
+  margin-bottom: $spacing-base;
+
+  .form-group {
+    flex: 1;
+    margin-bottom: 0;
+  }
+
+  @media (width <= 500px) {
+    flex-direction: column;
+    gap: $spacing-base;
+
+    .form-group {
+      margin-bottom: 0;
+    }
+  }
+}
+
+// --------------------------------------------------------------------------
+// Button Row (form actions)
+// --------------------------------------------------------------------------
+.button-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+// --------------------------------------------------------------------------
+// Connection Status
+// --------------------------------------------------------------------------
+#connection-status,
+#api-connection-status {
+  font-size: $font-size-sm + 1;
+  font-weight: $font-weight-medium;
+
+  &.success {
+    color: $color-success;
+  }
+
+  &.error {
+    color: $color-error;
+  }
+
+  svg {
+    vertical-align: -2px;
+    margin-right: $spacing-xs;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Prompt Info Box
+// --------------------------------------------------------------------------
+.prompt-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: $spacing-md $spacing-base;
+
+  @include accent-box;
+
+  margin-bottom: $spacing-base;
+  font-size: $font-size-sm + 1;
+  color: var(--text-secondary);
+  line-height: $line-height-normal;
+
+  &-icon {
+    flex-shrink: 0;
+    color: $accent-500;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Prompt Validation
+// --------------------------------------------------------------------------
+.prompt-validation {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: $spacing-md $spacing-base;
+  border-radius: $radius-md;
+  font-size: $font-size-sm + 1;
+  margin-top: 10px;
+  font-weight: $font-weight-medium;
+
+  &.validating {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+  }
+
+  &.valid {
+    @include accent-box-strong;
+
+    color: $color-success;
+  }
+
+  &.invalid {
+    @include error-box;
+
+    color: $color-error;
+  }
+
+  .spinner {
+    @include spinner;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Selection Grid (Arguments/CTAs)
+// --------------------------------------------------------------------------
+.selection-grid-wrapper {
+  position: relative;
+
+  // Gradient fade at bottom to indicate more content
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 8px; // Account for scrollbar
+    height: 48px;
+    background: linear-gradient(to bottom, transparent, var(--surface-secondary));
+    pointer-events: none;
+    border-radius: 0 0 $radius-md $radius-md;
+  }
+}
+
+.selection-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: $spacing-sm;
+  padding-bottom: 32px; // Extra space for gradient fade
+  margin-bottom: $spacing-lg;
+
+  // Firefox
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-secondary) var(--surface-elevated);
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--border-primary);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+  }
+}
+
+.selection-item {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-base;
+  padding: $spacing-base $spacing-lg;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all $transition-base;
+
+  &:hover {
+    border-color: $accent-500;
+    background: var(--surface-secondary);
+  }
+
+  &.exclude {
+    border-left: 3px solid $color-error;
+  }
+
+  input[type='checkbox'] {
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+}
+
+.item-content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  flex: 1;
+}
+
+.item-title {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.exclude-badge {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-error;
+  background: rgba($color-error, 0.15);
+  padding: 2px 6px;
+  border-radius: $radius-sm;
+  text-transform: uppercase;
+}
+
+.item-description {
+  font-size: $font-size-sm + 1;
+  color: var(--text-secondary);
+  line-height: $line-height-normal;
+}
+
+// --------------------------------------------------------------------------
+// Section Separator
+// --------------------------------------------------------------------------
+.section-separator {
+  display: flex;
+  align-items: center;
+  margin: $spacing-md 0;
+  gap: $spacing-md;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-primary);
+  }
+
+  span {
+    font-size: $font-size-sm + 1;
+    font-weight: $font-weight-semibold;
+    color: $color-error;
+    text-transform: uppercase;
+    letter-spacing: $letter-spacing-wider;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Section Actions
+// --------------------------------------------------------------------------
+.section-actions {
+  display: flex;
+  gap: $spacing-lg;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.selection-actions {
+  display: flex;
+  gap: $spacing-lg;
+  margin-top: $spacing-lg;
+  justify-content: center;
+}

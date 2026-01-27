@@ -1,0 +1,412 @@
+// ==========================================================================
+// Onboarding Styles
+// ==========================================================================
+// First-run setup wizard styles.
+
+@use '../variables' as *;
+@use '../mixins' as *;
+@use '../base' as base;
+@use '../buttons';
+@use '../forms';
+@use '../panels';
+
+// --------------------------------------------------------------------------
+// Font Import
+// --------------------------------------------------------------------------
+@import 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap';
+
+// --------------------------------------------------------------------------
+// Body
+// --------------------------------------------------------------------------
+body {
+  @include base.body-base;
+
+  min-height: 100vh;
+}
+
+// --------------------------------------------------------------------------
+// Container
+// --------------------------------------------------------------------------
+.onboarding-container {
+  max-width: $onboarding-max-width;
+  margin: 0 auto;
+  padding: $spacing-5xl $spacing-2xl;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+
+  @include breakpoint-down($breakpoint-sm) {
+    padding: $spacing-2xl $spacing-lg;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Header
+// --------------------------------------------------------------------------
+.onboarding-header {
+  text-align: center;
+  margin-bottom: $spacing-4xl;
+
+  h1 {
+    font-size: $font-size-5xl;
+    font-weight: $font-weight-bold;
+    letter-spacing: $letter-spacing-tight;
+    margin-bottom: $spacing-sm;
+  }
+}
+
+.header-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-lg;
+}
+
+.tagline {
+  font-size: $font-size-xl;
+  color: var(--text-secondary);
+}
+
+// --------------------------------------------------------------------------
+// Progress Bar
+// --------------------------------------------------------------------------
+.progress-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: $spacing-5xl;
+  padding: 0 $spacing-xl;
+}
+
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-sm;
+  position: relative;
+}
+
+.step-number {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface-secondary);
+  border: 2px solid var(--border-primary);
+
+  @include flex-center;
+
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-base;
+  color: var(--text-secondary);
+  transition: all $transition-slow;
+}
+
+.progress-step.active .step-number {
+  background: $accent-500;
+  border-color: $accent-500;
+  color: #000;
+}
+
+.progress-step.completed .step-number {
+  background: $color-success;
+  border-color: $color-success;
+  color: #fff;
+}
+
+.step-label {
+  @include section-label;
+
+  font-size: $font-size-sm + 1;
+
+  @include breakpoint-down($breakpoint-sm) {
+    font-size: $font-size-xs;
+  }
+}
+
+.progress-step.active .step-label {
+  color: $accent-500;
+}
+
+.progress-line {
+  width: 60px;
+  height: 2px;
+  background: var(--border-primary);
+  margin: 0 $spacing-sm;
+  margin-bottom: $spacing-2xl;
+
+  @include breakpoint-down($breakpoint-sm) {
+    width: 30px;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Main Content
+// --------------------------------------------------------------------------
+.onboarding-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.step-content {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-lg;
+  padding: $spacing-4xl;
+  animation: fadeIn $transition-slow;
+
+  &.hidden {
+    display: none;
+  }
+
+  @include breakpoint-down($breakpoint-sm) {
+    padding: $spacing-2xl $spacing-xl;
+  }
+}
+
+.step-header {
+  text-align: center;
+  margin-bottom: $spacing-3xl;
+
+  h2 {
+    font-size: $font-size-4xl;
+    font-weight: $font-weight-bold;
+    margin-bottom: $spacing-sm;
+    letter-spacing: $letter-spacing-tight;
+  }
+}
+
+.step-icon {
+  color: $accent-500;
+  margin-bottom: $spacing-lg;
+}
+
+.step-subtitle {
+  font-size: $font-size-lg;
+  color: var(--text-secondary);
+}
+
+// --------------------------------------------------------------------------
+// Privacy Content
+// --------------------------------------------------------------------------
+.privacy-content {
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: $spacing-sm;
+
+  @include custom-scrollbar;
+}
+
+.privacy-highlight {
+  @include accent-box-strong;
+
+  padding: $spacing-lg $spacing-xl;
+  margin-bottom: $spacing-2xl;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+
+  strong {
+    color: $accent-500;
+    font-size: $font-size-lg;
+  }
+
+  span {
+    color: var(--text-secondary);
+    font-size: $font-size-md;
+  }
+}
+
+.privacy-section {
+  margin-bottom: $spacing-xl;
+
+  h3 {
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: var(--text-primary);
+    margin-bottom: $spacing-sm;
+  }
+
+  p {
+    font-size: $font-size-md;
+    color: var(--text-secondary);
+    line-height: $line-height-relaxed;
+  }
+
+  ul {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  li {
+    font-size: $font-size-md;
+    color: var(--text-secondary);
+    padding: $spacing-xs 0;
+    padding-left: $spacing-xl;
+    position: relative;
+
+    &::before {
+      content: '\2713';
+      position: absolute;
+      left: 0;
+      color: $color-success;
+      font-weight: $font-weight-semibold;
+    }
+  }
+}
+
+.privacy-links {
+  display: flex;
+  gap: $spacing-lg;
+  margin-top: $spacing-2xl;
+  padding-top: $spacing-lg;
+  border-top: 1px solid var(--border-primary);
+
+  a {
+    color: $accent-500;
+    font-size: $font-size-md;
+    font-weight: $font-weight-medium;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.consent-checkbox {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-top: $spacing-2xl;
+  padding: $spacing-lg;
+  background: var(--surface-elevated);
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all $transition-base;
+
+  &:hover {
+    background: var(--border-primary);
+  }
+
+  span {
+    font-size: $font-size-base;
+    font-weight: $font-weight-medium;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Selection Info
+// --------------------------------------------------------------------------
+.selection-info {
+  @include accent-box;
+
+  padding: $spacing-md $spacing-lg;
+  margin-bottom: $spacing-xl;
+
+  p {
+    font-size: $font-size-md;
+    color: var(--text-secondary);
+    line-height: $line-height-normal;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Arguments & CTAs Grids
+// --------------------------------------------------------------------------
+.arguments-grid,
+.ctas-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: $spacing-sm;
+  padding-bottom: 32px; // Extra space for gradient fade
+
+  @include custom-scrollbar;
+}
+
+// --------------------------------------------------------------------------
+// API Section
+// --------------------------------------------------------------------------
+.api-info {
+  margin-bottom: $spacing-2xl;
+}
+
+.api-security-notice {
+  display: flex;
+  gap: $spacing-base;
+  padding: $spacing-lg $spacing-xl;
+
+  @include success-box;
+
+  svg {
+    color: $color-success;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  strong {
+    display: block;
+    color: $color-success;
+    font-size: $font-size-base;
+    margin-bottom: $spacing-xs;
+  }
+
+  p {
+    font-size: $font-size-md;
+    color: var(--text-secondary);
+    line-height: $line-height-normal;
+    margin: 0;
+  }
+}
+
+.skip-notice {
+  background: var(--surface-elevated);
+  border-radius: $radius-md;
+  padding: $spacing-base $spacing-lg;
+  margin-top: $spacing-xl;
+  text-align: center;
+
+  p {
+    font-size: $font-size-md;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Footer Navigation
+// --------------------------------------------------------------------------
+.onboarding-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: $spacing-4xl;
+  padding-top: $spacing-2xl;
+
+  @include breakpoint-down($breakpoint-sm) {
+    flex-direction: column;
+    gap: $spacing-md;
+  }
+}
+
+// Button size override for onboarding
+.onboarding-footer .btn {
+  padding: $spacing-base $spacing-4xl;
+  font-size: $font-size-lg;
+
+  @include breakpoint-down($breakpoint-sm) {
+    width: 100%;
+
+    &.secondary {
+      order: 1;
+    }
+  }
+}
+
+// --------------------------------------------------------------------------
+// Scrollbar
+// --------------------------------------------------------------------------
+@include base.global-scrollbar;

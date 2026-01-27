@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iran Amplifier - Welcome</title>
+    <link rel="stylesheet" href="onboarding.css" />
+  </head>
+  <body>
+    <div class="onboarding-container">
+      <header class="onboarding-header">
+        <img src="../../icons/iran.svg" alt="" class="header-logo" />
+        <h1>Iran Amplifier</h1>
+        <p class="tagline">Amplify voices for Iranian freedom</p>
+      </header>
+
+      <!-- Progress Indicator -->
+      <div class="progress-bar">
+        <div class="progress-step active" data-step="1">
+          <span class="step-number">1</span>
+          <span class="step-label">Privacy</span>
+        </div>
+        <div class="progress-line"></div>
+        <div class="progress-step" data-step="2">
+          <span class="step-number">2</span>
+          <span class="step-label">Arguments</span>
+        </div>
+        <div class="progress-line"></div>
+        <div class="progress-step" data-step="3">
+          <span class="step-number">3</span>
+          <span class="step-label">Actions</span>
+        </div>
+        <div class="progress-line"></div>
+        <div class="progress-step" data-step="4">
+          <span class="step-number">4</span>
+          <span class="step-label">API Key</span>
+        </div>
+      </div>
+
+      <main class="onboarding-main">
+        <!-- Step 1: Privacy Notice -->
+        <section class="step-content" id="step-1">
+          <div class="step-header">
+            <svg
+              class="step-icon"
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <h2>Privacy Notice</h2>
+            <p class="step-subtitle">Your privacy is our priority</p>
+          </div>
+
+          <div class="privacy-content">
+            <div class="privacy-highlight">
+              <strong>We do not store any personal data.</strong>
+              <span>All settings and usage data remain on your device.</span>
+            </div>
+
+            <div class="privacy-section disclaimer">
+              <p>
+                <strong>Independence Disclaimer:</strong> This is an independent, open-source
+                project not affiliated with any political party, organization, or individual.
+              </p>
+            </div>
+
+            <div class="privacy-section">
+              <h3>Third-Party Processing</h3>
+              <p>
+                When you generate responses, tweet content is sent to <strong>OpenAI</strong> or
+                <strong>Anthropic</strong> (your choice). These are US-based companies with their
+                own privacy policies.
+              </p>
+            </div>
+
+            <div class="privacy-section">
+              <h3>What we do NOT collect:</h3>
+              <ul>
+                <li>No personal names or accounts</li>
+                <li>No IP addresses logged</li>
+                <li>No tracking cookies or analytics</li>
+                <li>No registration required</li>
+              </ul>
+            </div>
+
+            <div class="privacy-section">
+              <h3>Your Rights (GDPR)</h3>
+              <p>
+                You can clear all data anytime from settings. For AI provider data, contact them
+                directly.
+              </p>
+            </div>
+
+            <div class="privacy-section">
+              <h3>Data Transfer</h3>
+              <p>
+                By using this extension, you acknowledge data may be processed in the US by your
+                chosen AI provider.
+              </p>
+            </div>
+
+            <div class="privacy-links">
+              <a href="../../PRIVACY.md" target="_blank">View Full Privacy Policy</a>
+              <a href="../../TERMS.md" target="_blank">Terms of Service</a>
+            </div>
+          </div>
+
+          <label class="consent-checkbox">
+            <input type="checkbox" id="privacy-consent" />
+            <span>I understand and accept the privacy policy</span>
+          </label>
+        </section>
+
+        <!-- Step 2: Arguments Selection -->
+        <section class="step-content hidden" id="step-2">
+          <div class="step-header">
+            <svg
+              class="step-icon"
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"
+              ></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <line x1="10" y1="9" x2="8" y2="9"></line>
+            </svg>
+            <h2>Select Your Arguments</h2>
+            <p class="step-subtitle">
+              Choose facts and talking points the AI can use when relevant
+            </p>
+          </div>
+
+          <div class="selection-info">
+            <p>
+              <strong>You control the message.</strong> Select the arguments you want the AI to have
+              access to. It will only use them when relevant to the specific tweet.
+            </p>
+          </div>
+
+          <div class="selection-grid-wrapper">
+            <div class="arguments-grid" id="arguments-grid">
+              <!-- Populated by JavaScript -->
+            </div>
+          </div>
+
+          <div class="selection-actions">
+            <button class="btn-link" id="select-all-args">Select All</button>
+            <button class="btn-link" id="deselect-all-args">Deselect All</button>
+          </div>
+        </section>
+
+        <!-- Step 3: Call to Action Selection -->
+        <section class="step-content hidden" id="step-3">
+          <div class="step-header">
+            <svg
+              class="step-icon"
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <h2>Select Call to Actions</h2>
+            <p class="step-subtitle">Choose policy demands the AI can advocate for</p>
+          </div>
+
+          <div class="selection-info">
+            <p>
+              <strong>You choose the advocacy.</strong> Select which policy demands you want the AI
+              to advocate for when appropriate to the context.
+            </p>
+          </div>
+
+          <div class="selection-grid-wrapper">
+            <div class="ctas-grid" id="ctas-grid">
+              <!-- Populated by JavaScript -->
+            </div>
+          </div>
+
+          <div class="selection-actions">
+            <button class="btn-link" id="select-all-ctas">Select All</button>
+            <button class="btn-link" id="deselect-all-ctas">Deselect All</button>
+          </div>
+        </section>
+
+        <!-- Step 4: API Key Setup -->
+        <section class="step-content hidden" id="step-4">
+          <div class="step-header">
+            <svg
+              class="step-icon"
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"
+              ></path>
+            </svg>
+            <h2>API Key Setup</h2>
+            <p class="step-subtitle">Connect to your AI provider (optional - can do later)</p>
+          </div>
+
+          <div class="api-info">
+            <div class="api-security-notice">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              <div>
+                <strong>Your API key is safe</strong>
+                <p>
+                  It's stored locally on your device only and sent directly to your chosen AI
+                  provider. We never see or store your key.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="provider">Provider</label>
+            <select id="provider">
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Anthropic</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="api-key">API Key</label>
+            <div class="input-with-button">
+              <input type="password" id="api-key" placeholder="Enter your API key" />
+              <button id="toggle-key" class="icon-btn" title="Show/hide key">
+                <svg
+                  class="icon-eye"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+            <p class="hint">
+              Get your API key from
+              <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI</a> or
+              <a href="https://console.anthropic.com/settings/keys" target="_blank">Anthropic</a>
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label for="model">Model</label>
+            <select id="model">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div class="skip-notice">
+            <p>You can skip this step and set up your API key later in the popup settings.</p>
+          </div>
+        </section>
+      </main>
+
+      <!-- Navigation Buttons -->
+      <footer class="onboarding-footer">
+        <button id="btn-back" class="btn secondary" style="visibility: hidden">Back</button>
+        <button id="btn-continue" class="btn primary" disabled>Continue</button>
+      </footer>
+    </div>
+
+    <script src="onboarding.js" type="module"></script>
+  </body>
+</html>

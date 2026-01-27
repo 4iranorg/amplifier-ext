@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "Iran Amplifier",
+  "version": "0.1.0",
+  "description": "Amplify voices supporting Iranian civil society and human rights on X/Twitter",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": [
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://api.openai.com/*",
+    "https://api.anthropic.com/*",
+    "https://api.github.com/*"
+  ],
+  "background": {
+    "scripts": ["src/background/service-worker.js"],
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "js": ["src/content/content.js"],
+      "css": ["src/content/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "icons/iran.svg",
+      "48": "icons/iran.svg",
+      "128": "icons/iran.svg"
+    }
+  },
+  "icons": {
+    "16": "icons/iran.svg",
+    "48": "icons/iran.svg",
+    "128": "icons/iran.svg"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/iran.svg",
+        "src/onboarding/onboarding.html",
+        "src/dashboard/dashboard.html"
+      ],
+      "matches": ["https://x.com/*", "https://twitter.com/*"]
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "amplifier@4iran.org",
+      "strict_min_version": "109.0"
+    }
+  }
+}

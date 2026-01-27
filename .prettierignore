@@ -1,0 +1,9 @@
+# Dependencies
+node_modules/
+
+# Build outputs (compiled CSS is tracked but formatted by sass)
+pnpm-lock.yaml
+
+# Distribution
+dist/
+*.zip

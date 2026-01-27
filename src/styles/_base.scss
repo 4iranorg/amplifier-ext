@@ -1,0 +1,78 @@
+// ==========================================================================
+// Base Styles
+// ==========================================================================
+// Reset, typography, and foundational styles for extension pages.
+
+@use 'sass:math';
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// --------------------------------------------------------------------------
+// CSS Reset
+// --------------------------------------------------------------------------
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+// --------------------------------------------------------------------------
+// Root Variables
+// --------------------------------------------------------------------------
+:root {
+  @include css-custom-properties;
+}
+
+// --------------------------------------------------------------------------
+// Body Base
+// --------------------------------------------------------------------------
+@mixin body-base {
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  line-height: $line-height-normal;
+  color: var(--text-primary);
+  background: var(--surface-primary);
+}
+
+// --------------------------------------------------------------------------
+// Global Scrollbar (root-level usage)
+// --------------------------------------------------------------------------
+@mixin global-scrollbar($width: 6px) {
+  ::-webkit-scrollbar {
+    width: $width;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-primary);
+    border-radius: math.div($width, 2);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+  }
+}
+
+// --------------------------------------------------------------------------
+// Link Base
+// --------------------------------------------------------------------------
+@mixin link-base {
+  color: $accent-500;
+  text-decoration: none;
+  transition: color $transition-base;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Selection
+// --------------------------------------------------------------------------
+::selection {
+  background: rgba($accent-500, 0.3);
+  color: var(--text-primary);
+}

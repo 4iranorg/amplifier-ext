@@ -1,0 +1,8 @@
+# Ignore Claude Code instructions file
+CLAUDE.md
+
+# Ignore changelog (auto-generated format)
+CHANGELOG.md
+
+# Ignore node_modules
+node_modules/

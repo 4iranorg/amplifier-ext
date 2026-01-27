@@ -1,0 +1,105 @@
+// ==========================================================================
+// Toggle Components
+// ==========================================================================
+// Toggle rows and related UI patterns.
+
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// --------------------------------------------------------------------------
+// Toggle Row
+// --------------------------------------------------------------------------
+.toggle-row {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-base;
+  padding: $spacing-base $spacing-lg;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-lg;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all $transition-base;
+
+  &:hover {
+    border-color: $accent-500;
+    background: var(--surface-elevated);
+  }
+
+  input[type='checkbox'] {
+    margin-top: 2px;
+    border-radius: 4px;
+  }
+}
+
+.toggle-label {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+
+  strong {
+    font-size: $font-size-base;
+    color: var(--text-primary);
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.toggle-desc {
+  font-size: $font-size-sm + 1;
+  color: var(--text-secondary);
+  line-height: $line-height-snug;
+}
+
+// --------------------------------------------------------------------------
+// Coming Soon Badge
+// --------------------------------------------------------------------------
+.coming-soon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: $spacing-base;
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: $font-size-md;
+
+  .icon-construction {
+    flex-shrink: 0;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Config Status
+// --------------------------------------------------------------------------
+.config-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: $spacing-md $spacing-base;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-md;
+  margin-bottom: $spacing-base;
+  font-size: $font-size-md;
+
+  &-label {
+    color: var(--text-secondary);
+  }
+
+  &-value {
+    color: var(--text-primary);
+    font-weight: $font-weight-semibold;
+
+    &.remote {
+      color: $color-success;
+    }
+
+    &.cached {
+      color: $accent-500;
+    }
+
+    &.bundled {
+      color: var(--text-secondary);
+    }
+  }
+}

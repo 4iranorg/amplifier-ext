@@ -1,0 +1,229 @@
+// ==========================================================================
+// Design Tokens
+// ==========================================================================
+// Central source of truth for all design values.
+// These SCSS variables compile to CSS custom properties for runtime theming.
+
+// --------------------------------------------------------------------------
+// Typography
+// --------------------------------------------------------------------------
+$font-family-base:
+  'Inter',
+  -apple-system,
+  blinkmacsystemfont,
+  'Segoe UI',
+  roboto,
+  sans-serif;
+$font-family-mono: 'SFMono-Regular', consolas, monospace;
+$font-size-xs: 10px;
+$font-size-sm: 11px;
+$font-size-base: 14px;
+$font-size-md: 13px;
+$font-size-lg: 15px;
+$font-size-xl: 16px;
+$font-size-2xl: 18px;
+$font-size-3xl: 22px;
+$font-size-4xl: 24px;
+$font-size-5xl: 28px;
+$font-size-6xl: 40px;
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+$line-height-tight: 1;
+$line-height-snug: 1.4;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.6;
+$letter-spacing-tight: -0.02em;
+$letter-spacing-normal: -0.01em;
+$letter-spacing-wide: 0.03em;
+$letter-spacing-wider: 0.05em;
+
+// --------------------------------------------------------------------------
+// Colors - Brand
+// --------------------------------------------------------------------------
+$accent-400: #fbbf24;
+$accent-500: #f59e0b;
+$accent-600: #d97706;
+
+// --------------------------------------------------------------------------
+// Colors - Semantic
+// --------------------------------------------------------------------------
+$color-success: #22c55e;
+$color-warning: #f59e0b;
+$color-error: #ef4444;
+
+// --------------------------------------------------------------------------
+// Colors - Neutral (Gray scale)
+// --------------------------------------------------------------------------
+$gray-400: #94a3b8;
+$gray-500: #64748b;
+$gray-600: #475569;
+
+// --------------------------------------------------------------------------
+// Colors - Red scale
+// --------------------------------------------------------------------------
+$red-500: #ef4444;
+$red-600: #dc2626;
+
+// --------------------------------------------------------------------------
+// Colors - Dark Theme (default)
+// --------------------------------------------------------------------------
+$surface-primary-dark: #0c0f14;
+$surface-secondary-dark: #151a23;
+$surface-elevated-dark: #1e2530;
+$border-primary-dark: #2a3441;
+$border-secondary-dark: #3d4a5c;
+$text-primary-dark: #f1f5f9;
+$text-secondary-dark: #94a3b8;
+
+// --------------------------------------------------------------------------
+// Colors - Light Theme
+// --------------------------------------------------------------------------
+$surface-primary-light: #fff;
+$surface-secondary-light: rgb(0 0 0 / 3%);
+$surface-elevated-light: rgb(0 0 0 / 5%);
+$border-primary-light: #e5e7eb;
+$border-secondary-light: #d1d5db;
+$text-primary-light: #111827;
+$text-secondary-light: #6b7280;
+
+// --------------------------------------------------------------------------
+// Shadows
+// --------------------------------------------------------------------------
+$shadow-sm: 0 1px 2px rgb(0 0 0 / 20%);
+$shadow-md:
+  0 4px 6px -1px rgb(0 0 0 / 30%),
+  0 2px 4px -2px rgb(0 0 0 / 20%);
+$shadow-lg:
+  0 10px 15px -3px rgb(0 0 0 / 30%),
+  0 4px 6px -4px rgb(0 0 0 / 20%);
+$shadow-xl:
+  0 20px 25px -5px rgb(0 0 0 / 40%),
+  0 8px 10px -6px rgb(0 0 0 / 30%);
+
+// --------------------------------------------------------------------------
+// Border Radius
+// --------------------------------------------------------------------------
+$radius-sm: 8px;
+$radius-md: 12px;
+$radius-lg: 16px;
+$radius-xl: 20px;
+$radius-full: 9999px;
+
+// --------------------------------------------------------------------------
+// Spacing
+// --------------------------------------------------------------------------
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 12px;
+$spacing-base: 14px;
+$spacing-lg: 16px;
+$spacing-xl: 20px;
+$spacing-2xl: 24px;
+$spacing-3xl: 28px;
+$spacing-4xl: 32px;
+$spacing-5xl: 40px;
+
+// --------------------------------------------------------------------------
+// Transitions
+// --------------------------------------------------------------------------
+$transition-fast: 0.15s ease;
+$transition-base: 0.2s ease;
+$transition-slow: 0.3s ease;
+
+// --------------------------------------------------------------------------
+// Z-Index Scale
+// --------------------------------------------------------------------------
+$z-dropdown: 100;
+$z-sticky: 1000;
+$z-panel: 10001;
+$z-overlay: 10002;
+
+// --------------------------------------------------------------------------
+// Breakpoints
+// --------------------------------------------------------------------------
+$breakpoint-sm: 600px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 960px;
+
+// --------------------------------------------------------------------------
+// Component Sizes
+// --------------------------------------------------------------------------
+$popup-min-width: 360px;
+$popup-max-width: 400px;
+$dashboard-max-width: 960px;
+$onboarding-max-width: 720px;
+$panel-width: 400px;
+$panel-max-height: 80vh;
+
+// --------------------------------------------------------------------------
+// Activity Graph
+// --------------------------------------------------------------------------
+$graph-cell-size: 12px;
+$graph-cell-gap: 3px;
+$graph-cell-radius: 3px;
+$graph-level-0: #161b22;
+$graph-level-0-border: #21262d;
+$graph-level-1: #0e4429;
+$graph-level-2: #006d32;
+$graph-level-3: #26a641;
+$graph-level-4: #39d353;
+
+// --------------------------------------------------------------------------
+// CSS Custom Properties Generator
+// --------------------------------------------------------------------------
+// Mixin to output CSS custom properties for runtime theming
+@mixin css-custom-properties {
+  // Accent
+  --accent-400: #{$accent-400};
+  --accent-500: #{$accent-500};
+  --accent-600: #{$accent-600};
+
+  // Semantic
+  --success: #{$color-success};
+  --warning: #{$color-warning};
+  --error: #{$color-error};
+
+  // Grays
+  --gray-400: #{$gray-400};
+  --gray-500: #{$gray-500};
+  --gray-600: #{$gray-600};
+
+  // Reds
+  --red-500: #{$red-500};
+  --red-600: #{$red-600};
+
+  // Surfaces (dark theme default)
+  --surface-primary: #{$surface-primary-dark};
+  --surface-secondary: #{$surface-secondary-dark};
+  --surface-elevated: #{$surface-elevated-dark};
+  --border-primary: #{$border-primary-dark};
+  --border-secondary: #{$border-secondary-dark};
+  --text-primary: #{$text-primary-dark};
+  --text-secondary: #{$text-secondary-dark};
+
+  // Shadows
+  --shadow-sm: #{$shadow-sm};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
+  --shadow-xl: #{$shadow-xl};
+
+  // Radius
+  --radius-sm: #{$radius-sm};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
+  --radius-xl: #{$radius-xl};
+  --radius-full: #{$radius-full};
+}
+
+// Light theme overrides
+@mixin css-custom-properties-light {
+  --surface-primary: #{$surface-primary-light};
+  --surface-secondary: #{$surface-secondary-light};
+  --surface-elevated: #{$surface-elevated-light};
+  --border-primary: #{$border-primary-light};
+  --border-secondary: #{$border-secondary-light};
+  --text-primary: #{$text-primary-light};
+  --text-secondary: #{$text-secondary-light};
+}
