@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pre-commit run:*)",
+      "Bash(pnpm run:*)",
+      "Bash(just:*)",
+      "Bash(git:*)",
+      "Bash(gh:*)"
+    ]
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "private": true,
+  "name": "amplifier",
+  "type": "module",
+  "description": "Build tools for Iran Amplifier browser extension",
+  "scripts": {
+    "build:css": "sass --no-source-map --style=expanded src/styles/content/content.scss:src/content/content.css src/styles/popup/popup.scss:src/popup/popup.css src/styles/dashboard/dashboard.scss:src/dashboard/dashboard.css src/styles/onboarding/onboarding.scss:src/onboarding/onboarding.css src/styles/landing/landing.scss:docs/landing.css",
+    "watch:css": "sass --no-source-map --watch --style=expanded src/styles/content/content.scss:src/content/content.css src/styles/popup/popup.scss:src/popup/popup.css src/styles/dashboard/dashboard.scss:src/dashboard/dashboard.css src/styles/onboarding/onboarding.scss:src/onboarding/onboarding.css src/styles/landing/landing.scss:docs/landing.css",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "lint:css": "stylelint 'src/styles/**/*.scss'",
+    "lint:css:fix": "stylelint 'src/styles/**/*.scss' --fix",
+    "format": "prettier --write 'src/**/*.{js,json,html,css,scss}' '*.{json,md}'",
+    "format:check": "prettier --check 'src/**/*.{js,json,html,css,scss}' '*.{json,md}'"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.2",
+    "globals": "^17.2.0",
+    "prettier": "^3.8.1",
+    "sass": "^1.97.3",
+    "stylelint": "^17.0.0",
+    "stylelint-config-standard-scss": "^17.0.0"
+  }
+}

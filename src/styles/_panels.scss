@@ -1,0 +1,262 @@
+// ==========================================================================
+// Panels & Cards
+// ==========================================================================
+// Common panel and card patterns used across pages.
+
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// --------------------------------------------------------------------------
+// Privacy Notice
+// --------------------------------------------------------------------------
+.privacy-notice {
+  @include accent-box;
+
+  border-radius: $radius-lg;
+  padding: $spacing-base $spacing-2xl - 6;
+  margin-bottom: $spacing-2xl - 6;
+
+  h3 {
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    color: $accent-500;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .icon-lock {
+    flex-shrink: 0;
+  }
+
+  ul {
+    list-style: none;
+    font-size: $font-size-sm + 1;
+    color: var(--text-secondary);
+  }
+
+  li {
+    padding: 3px 0;
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+
+    &::before {
+      content: '\2713';
+      color: $accent-500;
+      font-weight: $font-weight-bold;
+      font-size: $font-size-sm;
+    }
+  }
+
+  a {
+    color: $accent-500;
+    text-decoration: none;
+    font-weight: $font-weight-medium;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+// --------------------------------------------------------------------------
+// Update Banner
+// --------------------------------------------------------------------------
+.update-banner {
+  @include accent-box;
+
+  border-radius: $radius-lg;
+  padding: $spacing-base $spacing-2xl - 6;
+  margin-bottom: $spacing-2xl - 6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.update-content {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.update-icon {
+  font-size: 20px;
+}
+
+.update-text {
+  font-size: $font-size-md;
+  color: var(--text-primary);
+  font-weight: $font-weight-medium;
+
+  strong {
+    color: $accent-500;
+  }
+}
+
+.update-actions {
+  display: flex;
+  gap: $spacing-md;
+
+  .dismiss {
+    color: var(--text-secondary);
+    transition: color $transition-base;
+
+    &:hover {
+      color: var(--text-primary);
+    }
+  }
+}
+
+// --------------------------------------------------------------------------
+// Voice Fingerprint
+// --------------------------------------------------------------------------
+.voice-fingerprint {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: $spacing-base $spacing-lg;
+
+  @include accent-box;
+
+  margin-top: $spacing-base;
+  margin-bottom: $spacing-lg;
+}
+
+.fingerprint-label {
+  @include section-label;
+}
+
+.fingerprint-value {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $accent-500;
+  font-family: $font-family-mono;
+  letter-spacing: 3px;
+}
+
+.fingerprint-hint {
+  font-size: $font-size-sm;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+// --------------------------------------------------------------------------
+// Privacy Section (dashboard/onboarding)
+// --------------------------------------------------------------------------
+.privacy-section {
+  h2 {
+    color: $accent-500;
+  }
+
+  .icon-lock {
+    color: $accent-500;
+  }
+
+  ul {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: $spacing-lg;
+  }
+
+  li {
+    font-size: $font-size-md;
+    color: var(--text-secondary);
+    padding: $spacing-xs 0;
+    padding-left: $spacing-2xl;
+    position: relative;
+
+    &::before {
+      content: '\2713';
+      position: absolute;
+      left: 0;
+      color: $color-success;
+      font-weight: $font-weight-semibold;
+    }
+  }
+
+  a {
+    color: $accent-500;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+// --------------------------------------------------------------------------
+// Danger Zone
+// --------------------------------------------------------------------------
+.danger-zone {
+  text-align: center;
+
+  h2 {
+    color: $color-error;
+    justify-content: center;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Support Section
+// --------------------------------------------------------------------------
+.support-section {
+  text-align: center;
+  padding: $spacing-lg 0;
+}
+
+.support-link {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 10px $spacing-xl;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-full;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &:hover {
+    background: var(--surface-elevated);
+    border-color: $accent-500;
+    color: var(--text-primary);
+    transform: translateY(-1px);
+  }
+
+  .icon-coffee {
+    flex-shrink: 0;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Back Link
+// --------------------------------------------------------------------------
+.back-link {
+  text-align: center;
+  padding: $spacing-3xl 0;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-sm;
+    color: $accent-500;
+    text-decoration: none;
+    font-size: $font-size-base;
+    font-weight: $font-weight-medium;
+    padding: 10px $spacing-xl;
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: $radius-full;
+    transition: all $transition-base;
+
+    &:hover {
+      background: var(--surface-elevated);
+      border-color: $accent-500;
+      transform: translateY(-1px);
+    }
+  }
+}

@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iran Amplifier - Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+  <body>
+    <header class="dashboard-header">
+      <div class="header-container">
+        <a href="https://amplifier.4iran.org" target="_blank" class="header-brand">
+          <img
+            alt=""
+            loading="lazy"
+            width="48"
+            height="48"
+            decoding="async"
+            src="../../icons/iran.svg"
+            class="header-flag"
+          />
+          <h1>Iran Amplifier</h1>
+        </a>
+        <p class="header-slogan">Amplify the voice of a nation</p>
+      </div>
+    </header>
+
+    <div class="dashboard-container">
+      <main class="dashboard-main">
+        <!-- Activity Section -->
+        <section class="dashboard-section" id="activity-section">
+          <h2>Activity</h2>
+
+          <!-- Stats Summary -->
+          <div class="stats-summary">
+            <div class="stat-item">
+              <span class="stat-number" id="total-amplifications">0</span>
+              <span class="stat-label">Total Amplifications</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number" id="current-streak">0</span>
+              <span class="stat-label">Day Streak</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number" id="best-day">0</span>
+              <span class="stat-label">Best Day</span>
+            </div>
+          </div>
+
+          <!-- Contribution Graph -->
+          <div class="graph-section">
+            <h3>Contribution Graph</h3>
+            <p class="graph-subtitle">Last year of amplification activity</p>
+
+            <div class="graph-container">
+              <div class="graph-months" id="graph-months"></div>
+              <div class="graph-wrapper">
+                <div class="graph-days">
+                  <span>Sun</span>
+                  <span>Mon</span>
+                  <span>Tue</span>
+                  <span>Wed</span>
+                  <span>Thu</span>
+                  <span>Fri</span>
+                  <span>Sat</span>
+                </div>
+                <div class="graph-grid" id="graph-grid"></div>
+              </div>
+            </div>
+
+            <div class="graph-legend">
+              <span>Less</span>
+              <div class="legend-squares">
+                <div class="legend-square level-0"></div>
+                <div class="legend-square level-1"></div>
+                <div class="legend-square level-2"></div>
+                <div class="legend-square level-3"></div>
+                <div class="legend-square level-4"></div>
+              </div>
+              <span>More</span>
+            </div>
+          </div>
+
+          <!-- Share Button -->
+          <div class="share-section">
+            <button id="share-stats" class="btn secondary">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="18" cy="5" r="3"></circle>
+                <circle cx="6" cy="12" r="3"></circle>
+                <circle cx="18" cy="19" r="3"></circle>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+              </svg>
+              Share your impact on X
+            </button>
+          </div>
+
+          <!-- Usage Stats -->
+          <div class="usage-grid">
+            <div class="usage-card">
+              <span class="usage-label">Today</span>
+              <span class="usage-value" id="usage-today-tokens">0</span>
+              <span class="usage-sublabel">tokens</span>
+              <span class="usage-cost" id="usage-today-cost">$0.00</span>
+            </div>
+            <div class="usage-card">
+              <span class="usage-label">This Week</span>
+              <span class="usage-value" id="usage-week-tokens">0</span>
+              <span class="usage-sublabel">tokens</span>
+              <span class="usage-cost" id="usage-week-cost">$0.00</span>
+            </div>
+            <div class="usage-card">
+              <span class="usage-label">This Month</span>
+              <span class="usage-value" id="usage-month-tokens">0</span>
+              <span class="usage-sublabel">tokens</span>
+              <span class="usage-cost" id="usage-month-cost">$0.00</span>
+            </div>
+            <div class="usage-card">
+              <span class="usage-label">All Time</span>
+              <span class="usage-value" id="usage-all-tokens">0</span>
+              <span class="usage-sublabel">tokens</span>
+              <span class="usage-cost" id="usage-all-cost">$0.00</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- API Configuration Section -->
+        <section class="dashboard-section" id="api-section">
+          <h2>API Configuration</h2>
+          <p class="section-intro">
+            Configure your AI provider. Your API key is stored locally and never sent anywhere
+            except directly to your chosen provider. View pricing:
+            <a href="https://platform.openai.com/docs/pricing" target="_blank">OpenAI</a> ·
+            <a href="https://docs.anthropic.com/en/docs/about-claude/pricing" target="_blank"
+              >Anthropic</a
+            >
+          </p>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="api-provider">Provider</label>
+              <select id="api-provider">
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="api-model">Model</label>
+              <select id="api-model">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="api-key">API Key</label>
+            <div class="input-with-button">
+              <input type="password" id="api-key" placeholder="Enter your API key" />
+              <button id="toggle-api-key" class="icon-btn" title="Show/hide key">
+                <svg
+                  class="icon-eye"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="section-actions">
+            <button id="test-api-connection" class="btn secondary small">Test Connection</button>
+            <span id="api-connection-status"></span>
+            <button id="save-api-config" class="btn primary small">Save API Config</button>
+          </div>
+        </section>
+
+        <!-- Voice Preferences Section -->
+        <section class="dashboard-section" id="voice-section">
+          <h2>Voice Preferences</h2>
+          <p class="section-intro">
+            Personalize your response style for unique outputs. These preferences help generate
+            responses that match your communication style.
+          </p>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="voice-style">Communication Style</label>
+              <select id="voice-style">
+                <option value="professional">Professional & measured</option>
+                <option value="passionate">Passionate & direct</option>
+                <option value="analytical">Thoughtful & analytical</option>
+                <option value="personal" selected>Warm & personal</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="voice-background">Your Background</label>
+              <select id="voice-background">
+                <option value="tech">Technology</option>
+                <option value="healthcare">Healthcare</option>
+                <option value="arts">Arts & Culture</option>
+                <option value="law">Law & Policy</option>
+                <option value="business">Business</option>
+                <option value="student">Student/Academic</option>
+                <option value="other" selected>Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="voice-approach">Content Approach</label>
+              <select id="voice-approach">
+                <option value="facts">Facts & evidence</option>
+                <option value="human">Human stories & impact</option>
+                <option value="policy">Policy & action</option>
+                <option value="mixed" selected>Mixed approach</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="voice-length">Response Length</label>
+              <select id="voice-length">
+                <option value="punchy">Punchy (short)</option>
+                <option value="medium" selected>Medium</option>
+                <option value="full">Full (280 chars)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="voice-fingerprint" id="voice-fingerprint">
+            <span class="fingerprint-label">Voice fingerprint:</span>
+            <span class="fingerprint-value" id="voice-fingerprint-value">------</span>
+            <span class="fingerprint-hint">Unique to you, ensures varied responses</span>
+          </div>
+
+          <div class="section-actions">
+            <button id="reset-voice" class="btn-link">Reset to defaults</button>
+            <button id="save-voice" class="btn primary small">Save Preferences</button>
+          </div>
+        </section>
+
+        <!-- Arguments Section -->
+        <section class="dashboard-section" id="arguments-section">
+          <h2>Arguments</h2>
+          <p class="section-intro">
+            <strong>You control the message.</strong> Select facts and talking points the AI can use
+            when relevant to the tweet.
+          </p>
+
+          <div class="selection-grid-wrapper">
+            <div class="selection-grid" id="arguments-grid">
+              <!-- Populated by JavaScript -->
+            </div>
+          </div>
+
+          <div class="section-actions">
+            <button class="btn-link" id="select-all-args">Select All</button>
+            <button class="btn-link" id="deselect-all-args">Deselect All</button>
+            <button id="save-arguments" class="btn primary small">Save Arguments</button>
+          </div>
+        </section>
+
+        <!-- Call to Action Section -->
+        <section class="dashboard-section" id="ctas-section">
+          <h2>Call to Actions</h2>
+          <p class="section-intro">
+            <strong>You choose the advocacy.</strong> Select policy demands the AI can advocate for
+            when appropriate.
+          </p>
+
+          <div class="selection-grid-wrapper">
+            <div class="selection-grid" id="ctas-grid">
+              <!-- Populated by JavaScript -->
+            </div>
+          </div>
+
+          <div class="section-actions">
+            <button class="btn-link" id="select-all-ctas">Select All</button>
+            <button class="btn-link" id="deselect-all-ctas">Deselect All</button>
+            <button id="save-ctas" class="btn primary small">Save CTAs</button>
+          </div>
+        </section>
+
+        <!-- Style Prompt Section -->
+        <section class="dashboard-section" id="style-section">
+          <h2>Style Prompt</h2>
+          <div class="prompt-info">
+            <svg
+              class="prompt-info-icon"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <span
+              >Core mission guardrails are fixed and cannot be modified. This prompt controls tone
+              and style only.</span
+            >
+          </div>
+
+          <div class="form-group">
+            <textarea
+              id="custom-prompt"
+              rows="10"
+              placeholder="Customize tone, style, and content strategy..."
+            ></textarea>
+          </div>
+
+          <div class="section-actions">
+            <button id="reset-prompt" class="btn-link">Reset to default</button>
+            <button id="save-prompt" class="btn primary small">Save Prompt</button>
+          </div>
+        </section>
+
+        <!-- Remote Configuration Section -->
+        <section class="dashboard-section" id="config-section">
+          <h2>Remote Configuration</h2>
+          <p class="section-intro">
+            Receive updated pricing, models, and features without requiring an extension update.
+          </p>
+
+          <label class="toggle-row">
+            <input type="checkbox" id="use-remote-config" checked />
+            <span class="toggle-label">
+              <strong>Use remote config</strong>
+              <span class="toggle-desc">Load configuration from GitHub releases</span>
+            </span>
+          </label>
+
+          <div class="config-status" id="config-status">
+            <span class="config-status-label">Status:</span>
+            <span class="config-status-value" id="config-status-value">Loading...</span>
+          </div>
+
+          <div class="section-actions">
+            <button id="refresh-config" class="btn secondary small">Refresh Config</button>
+          </div>
+        </section>
+
+        <!-- Community Features Section -->
+        <section class="dashboard-section" id="community-section">
+          <h2>Community Features</h2>
+          <p class="section-intro">
+            Optional features to help the Iran solidarity community. These are disabled by default.
+          </p>
+
+          <label class="toggle-row">
+            <input type="checkbox" id="share-stats-toggle" />
+            <span class="toggle-label">
+              <strong>Share anonymous stats</strong>
+              <span class="toggle-desc">Help improve the tool with anonymous usage data</span>
+            </span>
+          </label>
+
+          <label class="toggle-row">
+            <input type="checkbox" id="contribute-hot-posts" />
+            <span class="toggle-label">
+              <strong>Contribute to hot posts</strong>
+              <span class="toggle-desc">Help surface trending content for the community</span>
+            </span>
+          </label>
+
+          <p class="coming-soon">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="2" y="6" width="20" height="8" rx="1"></rect>
+              <path d="M17 14v7M7 14v7M17 3v3M7 3v3"></path>
+            </svg>
+            Coming soon: These features require backend integration
+          </p>
+        </section>
+
+        <!-- About Section -->
+        <section class="dashboard-section" id="about-section">
+          <h2>About</h2>
+          <p class="section-intro">
+            Iran Amplifier is a privacy-first browser extension that helps generate AI-powered
+            responses on X (formerly Twitter) to support Iranian civil society, human rights, and
+            democratic movements.
+          </p>
+          <p class="section-intro">
+            <strong>You're in control.</strong> You choose which arguments and talking points the AI
+            can use, customize the style, and review every response before posting.
+            <strong
+              >This extension does not automate posting, coordinate users, or generate identical
+              messages.</strong
+            >
+          </p>
+          <p class="section-intro">
+            This is an independent, open-source project not affiliated with any political party,
+            organization, or individual. Any similarity to other names or products is coincidental.
+          </p>
+        </section>
+
+        <!-- Privacy Section -->
+        <section class="dashboard-section privacy-section" id="privacy-section">
+          <h2>
+            <svg
+              class="icon-lock"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            Privacy
+          </h2>
+          <ul>
+            <li>Your API key never leaves your device</li>
+            <li>No servers, no tracking, no analytics</li>
+            <li>Direct API calls to OpenAI or Anthropic only</li>
+            <li>
+              100%
+              <a href="https://github.com/4iranorg/amplifier-ext" target="_blank">open source</a>
+              and auditable
+            </li>
+          </ul>
+        </section>
+
+        <!-- Danger Zone -->
+        <section class="dashboard-section danger-zone" id="danger-section">
+          <h2>Danger Zone</h2>
+          <p class="section-intro">
+            Permanently delete all extension data including your API key and settings.
+          </p>
+          <button id="clear-data" class="btn danger">Clear All Extension Data</button>
+        </section>
+      </main>
+    </div>
+
+    <!-- Spread the Word -->
+    <section class="spread-section">
+      <h2>Spread the Word</h2>
+      <p>Help amplify Iranian voices by sharing this tool</p>
+      <div class="spread-buttons">
+        <a
+          href="https://x.com/intent/tweet?text=I%20use%20Iran%20Amplifier%20to%20support%20Iranian%20civil%20society%20on%20X.%20Join%20the%20movement%3A&url=https%3A%2F%2Fgithub.com%2F4iranorg%2Famplifier&hashtags=IranRevolution2026,4Iran,IranAmplifier"
+          target="_blank"
+          class="spread-btn"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+            />
+          </svg>
+          Share on X
+        </a>
+        <button id="copy-link" class="spread-btn">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+          </svg>
+          Copy Link
+        </button>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="dashboard-footer">
+      <div class="footer-content">
+        <div class="footer-top-row">
+          <a href="https://amplifier.4iran.org" target="_blank" class="footer-brand">
+            <span class="footer-title">Iran Amplifier</span>
+          </a>
+          <div class="footer-links">
+            <a href="https://github.com/4iranorg/amplifier-ext" target="_blank">GitHub</a>
+            <a href="../../PRIVACY.md" target="_blank">Privacy Policy</a>
+            <a href="../../TERMS.md" target="_blank">Terms of Service</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span class="footer-solidarity">
+          <svg
+            class="heart-icon"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+            />
+          </svg>
+          In solidarity with the Iranian people
+        </span>
+        <span class="footer-copyright">&copy; 2026 4iran.org</span>
+      </div>
+    </footer>
+
+    <script src="dashboard.js" type="module"></script>
+  </body>
+</html>

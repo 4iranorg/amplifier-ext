@@ -1,0 +1,712 @@
+// ==========================================================================
+// Content Script Styles
+// ==========================================================================
+// Injected into X/Twitter pages. All styles are scoped to extension elements
+// to avoid conflicts with the host page.
+
+@use '../variables' as *;
+@use '../mixins' as *;
+
+// --------------------------------------------------------------------------
+// Scoped CSS Custom Properties
+// --------------------------------------------------------------------------
+// Content script injects into X pages, so we scope variables to our elements
+.iran-amplifier-wrapper,
+.iran-amplifier-panel,
+.iap-onboard-overlay {
+  @include css-custom-properties;
+}
+
+// --------------------------------------------------------------------------
+// Amplify Button (inline with tweet actions)
+// --------------------------------------------------------------------------
+.iran-amplifier-wrapper {
+  display: inline-flex;
+  align-items: center;
+  margin-left: $spacing-sm;
+}
+
+.iran-amplifier-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px $spacing-base;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: $radius-full;
+  color: #e5e5e5;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  transition: all $transition-base;
+  font-family: $font-family-base;
+
+  &:hover {
+    background: #333;
+    border-color: #4a4a4a;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.iran-amplifier-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.iran-flag-icon {
+  flex-shrink: 0;
+}
+
+.iran-amplifier-text {
+  font-size: $font-size-sm + 1;
+  font-weight: $font-weight-semibold;
+}
+
+// --------------------------------------------------------------------------
+// Compose Dialog Toolbar Button
+// --------------------------------------------------------------------------
+.iran-amplifier-toolbar-wrapper {
+  margin-right: $spacing-sm !important;
+}
+
+.iran-amplifier-toolbar-btn {
+  @include flex-center;
+
+  min-width: 36px !important;
+  width: 36px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  background: #2a2a2a !important;
+  border: 1px solid #3a3a3a !important;
+  border-radius: 50% !important;
+  color: #e5e5e5 !important;
+  font-size: $font-size-xl !important;
+  line-height: $line-height-tight !important;
+  cursor: pointer !important;
+  transition: all $transition-base !important;
+  font-family: $font-family-base !important;
+  box-sizing: border-box !important;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 10%) !important;
+
+  span {
+    display: block !important;
+    line-height: $line-height-tight !important;
+  }
+
+  &:hover {
+    transform: scale(1.1) !important;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 20%) !important;
+  }
+
+  &:active {
+    transform: scale(0.95) !important;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Response Panel
+// --------------------------------------------------------------------------
+.iran-amplifier-panel {
+  position: fixed;
+  z-index: $z-panel;
+  width: $panel-width;
+  max-height: $panel-max-height;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-xl;
+  box-shadow:
+    $shadow-xl,
+    0 0 0 1px rgb(255 255 255 / 5%);
+  display: none;
+  font-family: $font-family-base;
+  overflow: hidden;
+}
+
+// Panel Header
+.iap-header {
+  @include flex-between;
+
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--surface-secondary);
+}
+
+.iap-title {
+  font-weight: $font-weight-bold;
+  font-size: $font-size-lg;
+  color: #fff;
+  letter-spacing: $letter-spacing-normal;
+}
+
+.iap-close {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-sm;
+  color: var(--text-secondary);
+  font-size: $font-size-2xl;
+  cursor: pointer;
+  padding: $spacing-xs $spacing-sm;
+  line-height: $line-height-tight;
+  transition: all $transition-base;
+
+  &:hover {
+    color: var(--text-primary);
+    background: var(--surface-elevated);
+    border-color: $gray-500;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Type Selector (Reply/Quote tabs)
+// --------------------------------------------------------------------------
+.iap-type-selector {
+  display: flex;
+  padding: $spacing-md $spacing-lg;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--surface-secondary);
+}
+
+.iap-type-btn {
+  flex: 1;
+  padding: 10px $spacing-lg;
+  background: transparent;
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-full;
+  color: var(--text-secondary);
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  transition: all $transition-base;
+
+  &:hover {
+    border-color: $accent-500;
+    color: $accent-500;
+    background: rgba($accent-500, 0.1);
+  }
+
+  &.active {
+    background: $accent-500;
+    border-color: $accent-500;
+    color: #fff;
+    box-shadow: $shadow-sm;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Content Area
+// --------------------------------------------------------------------------
+.iap-content {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: $spacing-base $spacing-2xl - 6;
+
+  @include custom-scrollbar(8px);
+}
+
+// --------------------------------------------------------------------------
+// Loading State
+// --------------------------------------------------------------------------
+.iap-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-5xl;
+  gap: $spacing-base;
+  color: var(--text-secondary);
+}
+
+.iap-spinner {
+  @include spinner(28px, 3px);
+}
+
+// --------------------------------------------------------------------------
+// Error State
+// --------------------------------------------------------------------------
+.iap-error {
+  padding: $spacing-base $spacing-lg;
+
+  @include error-box;
+
+  color: var(--error);
+  font-size: $font-size-md;
+  line-height: $line-height-normal;
+}
+
+// --------------------------------------------------------------------------
+// Analysis Section
+// --------------------------------------------------------------------------
+.iap-analysis {
+  display: flex;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-base;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.iap-analysis-label {
+  font-size: $font-size-sm;
+  color: var(--text-secondary);
+  font-weight: $font-weight-medium;
+}
+
+.iap-sentiment {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px $spacing-md;
+  border-radius: $radius-full;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: $letter-spacing-wide;
+
+  &.supportive {
+    background: rgba($accent-500, 0.15);
+    color: $accent-500;
+    border: 1px solid rgba($accent-500, 0.3);
+  }
+
+  &.critical {
+    background: rgba($color-error, 0.15);
+    color: var(--error);
+    border: 1px solid rgba($color-error, 0.3);
+  }
+
+  &.neutral {
+    background: rgba($gray-400, 0.15);
+    color: $gray-400;
+    border: 1px solid rgba($gray-400, 0.3);
+  }
+}
+
+.iap-approach {
+  font-size: $font-size-sm + 1;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+// --------------------------------------------------------------------------
+// Response Cards
+// --------------------------------------------------------------------------
+.iap-response-card {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-lg;
+  padding: $spacing-base $spacing-lg;
+  margin-bottom: $spacing-base;
+  transition: all $transition-base;
+
+  &:hover {
+    background: var(--surface-elevated);
+    box-shadow: $shadow-md;
+    border-color: var(--border-secondary);
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.iap-response-header {
+  @include flex-between;
+
+  margin-bottom: 10px;
+}
+
+.iap-response-num {
+  font-weight: $font-weight-bold;
+  color: $accent-500;
+  font-size: $font-size-sm + 1;
+  text-transform: uppercase;
+  letter-spacing: $letter-spacing-wider;
+}
+
+.iap-response-tone {
+  font-size: $font-size-sm;
+  color: var(--text-secondary);
+  background: var(--surface-elevated);
+  padding: $spacing-xs 10px;
+  border-radius: $radius-full;
+  font-weight: $font-weight-medium;
+}
+
+.iap-char-count {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+
+  &.ok {
+    color: $color-success;
+  }
+
+  &.warn {
+    color: $color-warning;
+  }
+
+  &.over {
+    color: $color-error;
+  }
+}
+
+.iap-response-text {
+  color: var(--text-primary);
+  font-size: $font-size-base;
+  line-height: $line-height-relaxed;
+  margin-bottom: $spacing-base;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+// --------------------------------------------------------------------------
+// Response Actions
+// --------------------------------------------------------------------------
+.iap-response-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.iap-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-sm $spacing-base;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-md;
+  color: var(--text-primary);
+  font-size: $font-size-sm + 1;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-base;
+
+  &:hover {
+    background: var(--surface-elevated);
+  }
+
+  svg {
+    margin-right: 6px;
+    flex-shrink: 0;
+  }
+}
+
+.iap-copy-btn:hover,
+.iap-reply-btn:hover {
+  border-color: $accent-500;
+  color: $accent-500;
+  background: rgba($accent-500, 0.1);
+}
+
+.iap-quote-btn:hover {
+  border-color: $color-warning;
+  color: $color-warning;
+  background: rgba($accent-500, 0.1);
+}
+
+// --------------------------------------------------------------------------
+// Feedback Area
+// --------------------------------------------------------------------------
+.iap-feedback {
+  display: flex;
+  gap: 10px;
+  padding: $spacing-base $spacing-2xl - 6;
+  border-top: 1px solid var(--border-primary);
+  background: var(--surface-secondary);
+}
+
+.iap-feedback-input {
+  flex: 1;
+  padding: 10px $spacing-lg;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-full;
+  color: var(--text-primary);
+  font-size: $font-size-md;
+  outline: none;
+  transition: all $transition-base;
+
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+
+  &:focus {
+    @include focus-ring;
+  }
+}
+
+.iap-feedback-btn {
+  padding: 10px $spacing-2xl - 6;
+  background: $accent-500;
+  border: none;
+  border-radius: $radius-full;
+  color: white;
+  font-size: $font-size-xl;
+  cursor: pointer;
+  transition: all $transition-base;
+  box-shadow: $shadow-sm;
+
+  &:hover {
+    background: $accent-600;
+    box-shadow: $shadow-md;
+    transform: translateY(-1px);
+  }
+
+  svg {
+    display: block;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// --------------------------------------------------------------------------
+// No Results
+// --------------------------------------------------------------------------
+.iap-no-results {
+  text-align: center;
+  padding: $spacing-4xl;
+  color: var(--text-secondary);
+  font-size: $font-size-base;
+}
+
+// --------------------------------------------------------------------------
+// Onboarding Modal (in-page)
+// --------------------------------------------------------------------------
+.iap-onboard-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 75%);
+  z-index: $z-overlay;
+
+  @include flex-center;
+
+  backdrop-filter: blur(8px);
+}
+
+.iap-onboard-modal {
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-xl;
+  width: 90%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow:
+    $shadow-xl,
+    0 0 0 1px rgb(255 255 255 / 5%);
+  font-family: $font-family-base;
+}
+
+.iap-onboard-header {
+  text-align: center;
+  padding: $spacing-2xl $spacing-3xl $spacing-2xl - 6;
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--surface-secondary);
+
+  h2 {
+    color: var(--text-primary);
+    font-size: $font-size-3xl;
+    font-weight: $font-weight-bold;
+    margin: 0 0 10px;
+    letter-spacing: $letter-spacing-tight;
+  }
+
+  p {
+    color: var(--text-secondary);
+    font-size: $font-size-base;
+    margin: 0;
+    line-height: $line-height-normal;
+  }
+}
+
+.iap-onboard-icon {
+  display: block;
+  margin-bottom: $spacing-base;
+  line-height: $line-height-tight;
+}
+
+.iap-onboard-questions {
+  padding: $spacing-2xl $spacing-3xl;
+}
+
+.iap-onboard-question {
+  margin-bottom: $spacing-2xl;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.iap-onboard-label {
+  display: block;
+  color: var(--text-primary);
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  margin-bottom: $spacing-md;
+}
+
+.iap-onboard-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.iap-onboard-option {
+  display: flex;
+  align-items: center;
+  padding: 10px $spacing-lg;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-full;
+  cursor: pointer;
+  transition: all $transition-base;
+
+  &:hover {
+    border-color: $accent-500;
+    background: rgba($accent-500, 0.1);
+  }
+
+  input[type='radio'] {
+    display: none;
+  }
+
+  span {
+    color: var(--text-primary);
+    font-size: $font-size-md;
+    font-weight: $font-weight-medium;
+  }
+
+  &:has(input:checked) {
+    background: $accent-500;
+    border-color: $accent-500;
+    box-shadow: $shadow-sm;
+
+    span {
+      color: #fff;
+      font-weight: $font-weight-semibold;
+    }
+  }
+}
+
+.iap-onboard-actions {
+  @include flex-between;
+
+  padding: $spacing-xl $spacing-3xl $spacing-3xl;
+  border-top: 1px solid var(--border-primary);
+  gap: $spacing-base;
+}
+
+.iap-onboard-skip {
+  flex: 1;
+  padding: $spacing-base $spacing-2xl;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-full;
+  color: var(--text-secondary);
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  transition: all $transition-base;
+  text-align: center;
+
+  &:hover {
+    border-color: $gray-500;
+    color: var(--text-primary);
+    background: var(--surface-elevated);
+  }
+}
+
+.iap-onboard-save {
+  flex: 1;
+  padding: $spacing-base $spacing-2xl;
+  background: $accent-600;
+  border: none;
+  border-radius: $radius-full;
+  color: white;
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  transition: all $transition-base;
+  text-align: center;
+  box-shadow: $shadow-md;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-lg;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// --------------------------------------------------------------------------
+// Light Mode Support
+// --------------------------------------------------------------------------
+@include light-mode {
+  .iran-amplifier-panel {
+    background: #fff;
+    border-color: $border-primary-light;
+    box-shadow: $shadow-xl;
+  }
+
+  .iran-amplifier-wrapper,
+  .iran-amplifier-panel,
+  .iap-onboard-overlay {
+    @include css-custom-properties-light;
+  }
+
+  .iap-onboard-overlay {
+    background: rgb(0 0 0 / 50%);
+  }
+
+  .iap-onboard-modal {
+    background: #fff;
+    border-color: $border-primary-light;
+    box-shadow: $shadow-xl;
+  }
+
+  .iap-onboard-header {
+    border-color: $border-primary-light;
+
+    h2 {
+      color: $text-primary-light;
+    }
+  }
+
+  .iap-onboard-label {
+    color: $text-primary-light;
+  }
+
+  .iap-onboard-option {
+    background: $surface-secondary-light;
+    border-color: $border-primary-light;
+
+    span {
+      color: $text-primary-light;
+    }
+  }
+
+  .iap-onboard-actions {
+    border-color: $border-primary-light;
+  }
+
+  .iap-onboard-skip {
+    border-color: $border-primary-light;
+    color: $text-secondary-light;
+  }
+
+  .iap-response-text,
+  .iap-title {
+    color: $text-primary-light;
+  }
+
+  .iap-feedback-input {
+    background: #f9fafb;
+  }
+}

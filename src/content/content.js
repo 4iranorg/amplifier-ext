@@ -1,0 +1,1226 @@
+/**
+ * Content script for Iran Amplifier extension.
+ * Injects "Amplify" buttons into X posts.
+ */
+
+/**
+ * Create Iran flag icon element as an img tag
+ * @param {string} size - CSS size (e.g., '16px', '1em')
+ * @returns {Element} img element
+ */
+function createFlagIcon(size = '1em') {
+  const img = document.createElement('img');
+  img.src = browser.runtime.getURL('icons/iran.svg');
+  img.alt = '';
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  img.style.width = size;
+  img.style.height = size;
+  img.style.display = 'inline-block';
+  img.style.verticalAlign = 'middle';
+  return img;
+}
+
+/**
+ * Create an SVG icon element
+ * @param {string} name - Icon name: 'copy', 'check', 'reply', 'quote', 'refresh'
+ * @param {string} size - CSS size (e.g., '14px', '1em')
+ * @returns {Element} SVG element
+ */
+function createIcon(name, size = '14px') {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', size);
+  svg.setAttribute('height', size);
+  svg.setAttribute('fill', 'none');
+  svg.style.display = 'inline-block';
+  svg.style.verticalAlign = 'middle';
+
+  // Refresh, quote, and reply icons use 24x24 viewBox, others use 14x14
+  if (name === 'refresh' || name === 'quote' || name === 'reply') {
+    svg.setAttribute('viewBox', '0 0 24 24');
+  } else {
+    svg.setAttribute('viewBox', '0 0 14 14');
+  }
+
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', 'currentColor');
+  path.setAttribute('stroke-width', name === 'refresh' ? '2' : '1.5');
+  path.setAttribute('stroke-linecap', 'round');
+  path.setAttribute('stroke-linejoin', 'round');
+
+  switch (name) {
+    case 'copy':
+      path.setAttribute(
+        'd',
+        'M8 4V2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h2m3-4h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z'
+      );
+      break;
+    case 'check':
+      path.setAttribute('d', 'M2 7l4 4 6-8');
+      path.setAttribute('stroke-width', '2');
+      break;
+    case 'reply':
+      // Speech bubble icon (X's reply style)
+      path.setAttribute('fill', 'currentColor');
+      path.setAttribute('stroke', 'none');
+      path.setAttribute(
+        'd',
+        'M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z'
+      );
+      break;
+    case 'quote':
+      // Pencil/edit icon (X's repost-with-comment style)
+      path.setAttribute('fill', 'currentColor');
+      path.setAttribute('stroke', 'none');
+      path.setAttribute(
+        'd',
+        'M14.23 2.854c.98-.977 2.56-.977 3.54 0l3.38 3.378c.97.977.97 2.559 0 3.536L9.91 21H3v-6.914L14.23 2.854zm2.12 1.414c-.19-.195-.51-.195-.7 0L5 14.914V19h4.09L19.73 8.354c.2-.196.2-.512 0-.708l-3.38-3.378zM14.75 19l-2 2H21v-2h-6.25z'
+      );
+      break;
+    case 'refresh':
+      // Lucide rotate-ccw icon (two paths)
+      path.setAttribute('d', 'M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8');
+      const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path2.setAttribute('fill', 'none');
+      path2.setAttribute('stroke', 'currentColor');
+      path2.setAttribute('stroke-width', '2');
+      path2.setAttribute('stroke-linecap', 'round');
+      path2.setAttribute('stroke-linejoin', 'round');
+      path2.setAttribute('d', 'M3 3v5h5');
+      svg.appendChild(path2);
+      break;
+  }
+
+  svg.appendChild(path);
+  return svg;
+}
+
+// State management
+let panelContainer = null;
+let currentTweetData = null;
+let currentResponseType = 'reply';
+let onboardingModal = null;
+let cachedBatchResult = null; // Cache for both reply and quote responses
+
+// Personalization options (must match lib/personalization.js)
+const VOICE_STYLES = [
+  { id: 'professional', label: 'Professional & measured' },
+  { id: 'passionate', label: 'Passionate & direct' },
+  { id: 'analytical', label: 'Thoughtful & analytical' },
+  { id: 'personal', label: 'Warm & personal' },
+];
+
+const BACKGROUNDS = [
+  { id: 'tech', label: 'Technology' },
+  { id: 'healthcare', label: 'Healthcare' },
+  { id: 'arts', label: 'Arts & Culture' },
+  { id: 'law', label: 'Law & Policy' },
+  { id: 'business', label: 'Business' },
+  { id: 'student', label: 'Student/Academic' },
+  { id: 'other', label: 'Other' },
+];
+
+const APPROACHES = [
+  { id: 'facts', label: 'Facts & evidence' },
+  { id: 'human', label: 'Human stories & impact' },
+  { id: 'policy', label: 'Policy & action' },
+  { id: 'mixed', label: 'Mixed approach' },
+];
+
+const LENGTHS = [
+  { id: 'punchy', label: 'Punchy (short)' },
+  { id: 'medium', label: 'Medium' },
+  { id: 'full', label: 'Full (280 chars)' },
+];
+
+/**
+ * Extract profile data from a tweet element
+ * @param {Element} tweetElement - The tweet article element
+ * @returns {Object|null} Profile data or null
+ */
+function _extractProfileData(tweetElement) {
+  try {
+    const profile = {
+      handle: '',
+      displayName: '',
+      bio: '',
+      followerCount: 0,
+      isVerified: false,
+    };
+
+    // Get author handle
+    const authorLinks = tweetElement.querySelectorAll('a[role="link"]');
+    for (const link of authorLinks) {
+      const href = link.getAttribute('href');
+      if (href && href.startsWith('/') && !href.includes('/status/')) {
+        profile.handle = href.slice(1);
+        const nameSpan = link.querySelector('span');
+        if (nameSpan) {
+          profile.displayName = nameSpan.innerText;
+        }
+        break;
+      }
+    }
+
+    // Check for verified badge
+    profile.isVerified = !!tweetElement.querySelector('[data-testid="icon-verified"]');
+
+    // Note: Bio and follower count are not available in tweet view
+    // They would require hovering or visiting the profile
+    // We'll let the background script detect category from name
+
+    return profile.handle ? profile : null;
+  } catch (error) {
+    console.error('Error extracting profile data:', error);
+    return null;
+  }
+}
+
+/**
+ * Extract tweet data from a tweet element
+ * @param {Element} tweetElement - The tweet article element
+ * @returns {Object|null} Tweet data or null if extraction failed
+ */
+function extractTweetData(tweetElement) {
+  try {
+    // Get tweet text
+    const textElement = tweetElement.querySelector('[data-testid="tweetText"]');
+    const text = textElement ? textElement.innerText : '';
+
+    // Get author info
+    const authorLinks = tweetElement.querySelectorAll('a[role="link"]');
+    let author = '';
+    let authorHandle = '';
+    for (const link of authorLinks) {
+      const href = link.getAttribute('href');
+      if (href && href.startsWith('/') && !href.includes('/status/')) {
+        authorHandle = href.slice(1); // Remove leading slash
+        const nameSpan = link.querySelector('span');
+        if (nameSpan) {
+          author = nameSpan.innerText;
+        }
+        break;
+      }
+    }
+
+    // Get tweet URL/ID from the time element's parent link
+    const timeElement = tweetElement.querySelector('time');
+    let url = '';
+    let tweetId = '';
+    if (timeElement) {
+      const timeLink = timeElement.closest('a');
+      if (timeLink) {
+        url = timeLink.href;
+        const match = url.match(/status\/(\d+)/);
+        if (match) {
+          tweetId = match[1];
+        }
+      }
+    }
+
+    // Check for quoted tweet
+    let quotedTweet = null;
+    const quotedTweetElement = tweetElement.querySelector('[data-testid="quoteTweet"]');
+    if (quotedTweetElement) {
+      const quotedText = quotedTweetElement.querySelector('[data-testid="tweetText"]');
+      const quotedAuthorLink = quotedTweetElement.querySelector('a[role="link"]');
+      if (quotedText) {
+        quotedTweet = {
+          text: quotedText.innerText,
+          author: quotedAuthorLink ? quotedAuthorLink.getAttribute('href')?.slice(1) || '' : '',
+        };
+      }
+    }
+
+    // Check for media
+    const hasMedia = !!tweetElement.querySelector(
+      '[data-testid="tweetPhoto"], [data-testid="videoPlayer"]'
+    );
+
+    // Check for verified badge
+    const isVerified = !!tweetElement.querySelector('[data-testid="icon-verified"]');
+
+    return {
+      tweetId,
+      url,
+      text,
+      author: author || `@${authorHandle}`,
+      authorHandle,
+      quotedTweet,
+      hasMedia,
+      isVerified,
+    };
+  } catch (error) {
+    console.error('Error extracting tweet data:', error);
+    return null;
+  }
+}
+
+/**
+ * Create element with attributes and children
+ * @param {string} tag - Element tag name
+ * @param {Object} attrs - Attributes to set
+ * @param {Array} children - Child elements or text
+ * @returns {Element} Created element
+ */
+function createElement(tag, attrs = {}, children = []) {
+  const el = document.createElement(tag);
+  for (const [key, value] of Object.entries(attrs)) {
+    if (key === 'className') {
+      el.className = value;
+    } else if (key === 'textContent') {
+      el.textContent = value;
+    } else if (key.startsWith('data')) {
+      el.setAttribute(key.replace(/([A-Z])/g, '-$1').toLowerCase(), value);
+    } else {
+      el.setAttribute(key, value);
+    }
+  }
+  for (const child of children) {
+    if (typeof child === 'string') {
+      el.appendChild(document.createTextNode(child));
+    } else if (child) {
+      el.appendChild(child);
+    }
+  }
+  return el;
+}
+
+/**
+ * Create the amplify button element
+ * @returns {Element} Button element
+ */
+function createAmplifyButton() {
+  const icon = createElement('span', { className: 'iran-amplifier-icon' });
+  icon.appendChild(createFlagIcon('14px'));
+  const text = createElement('span', { className: 'iran-amplifier-text', textContent: 'Amplify' });
+  const button = createElement(
+    'button',
+    {
+      className: 'iran-amplifier-btn',
+      title: 'Generate response with Iran Amplifier',
+    },
+    [icon, text]
+  );
+  return button;
+}
+
+/**
+ * Create the response panel
+ * @returns {Element} Panel element
+ */
+function createPanel() {
+  const panel = createElement('div', { className: 'iran-amplifier-panel' });
+
+  // Header
+  const titleSpan = createElement('span', { className: 'iap-title' });
+  titleSpan.appendChild(createFlagIcon('18px'));
+  titleSpan.appendChild(document.createTextNode(' Iran Amplifier'));
+  const header = createElement('div', { className: 'iap-header' }, [
+    titleSpan,
+    createElement('button', { className: 'iap-close', title: 'Close', textContent: '×' }),
+  ]);
+
+  // Type selector
+  const typeSelector = createElement('div', { className: 'iap-type-selector' }, [
+    createElement('button', {
+      className: 'iap-type-btn active',
+      'data-type': 'reply',
+      textContent: 'Reply',
+    }),
+    createElement('button', {
+      className: 'iap-type-btn',
+      'data-type': 'quote',
+      textContent: 'Quote',
+    }),
+  ]);
+
+  // Content area
+  const loading = createElement('div', { className: 'iap-loading', style: 'display: none;' }, [
+    createElement('div', { className: 'iap-spinner' }),
+    createElement('span', { textContent: 'Generating responses...' }),
+  ]);
+  const error = createElement('div', { className: 'iap-error', style: 'display: none;' });
+  const responses = createElement('div', { className: 'iap-responses' });
+  const content = createElement('div', { className: 'iap-content' }, [loading, error, responses]);
+
+  // Feedback area
+  const feedbackInput = createElement('input', {
+    type: 'text',
+    className: 'iap-feedback-input',
+    placeholder: 'Refine with a prompt...',
+  });
+  const feedbackBtn = createElement('button', {
+    className: 'iap-feedback-btn',
+    title: 'Regenerate',
+  });
+  feedbackBtn.appendChild(createIcon('refresh', '16px'));
+  const feedback = createElement('div', { className: 'iap-feedback' }, [
+    feedbackInput,
+    feedbackBtn,
+  ]);
+
+  panel.appendChild(header);
+  panel.appendChild(typeSelector);
+  panel.appendChild(content);
+  panel.appendChild(feedback);
+
+  // Event listeners
+  header.querySelector('.iap-close').addEventListener('click', hidePanel);
+
+  // Type selector - switches display without API call when cached
+  typeSelector.querySelectorAll('.iap-type-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      typeSelector.querySelectorAll('.iap-type-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentResponseType = btn.dataset.type;
+      if (currentTweetData) {
+        // Display cached responses if available (no API call)
+        if (cachedBatchResult) {
+          displayResponsesForTab(cachedBatchResult, currentResponseType);
+        } else {
+          generateAndDisplay();
+        }
+      }
+    });
+  });
+
+  // Feedback/refresh button
+  feedbackBtn.addEventListener('click', () => {
+    if (!currentTweetData) {
+      return;
+    }
+    const feedbackText = feedbackInput.value.trim();
+    // If no feedback text, force regeneration with new responses
+    generateAndDisplay(feedbackText || null, !feedbackText);
+    feedbackInput.value = '';
+  });
+
+  feedbackInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      feedbackBtn.click();
+    }
+  });
+
+  return panel;
+}
+
+/**
+ * Show panel at position
+ * @param {number} x - X coordinate
+ * @param {number} y - Y coordinate
+ */
+function showPanel(x, y) {
+  if (!panelContainer) {
+    panelContainer = createPanel();
+    document.body.appendChild(panelContainer);
+  }
+
+  // Position panel with viewport bounds checking
+  const panelWidth = 400;
+  const panelHeight = Math.min(500, window.innerHeight * 0.8);
+  const margin = 10;
+
+  // Clamp to viewport bounds (prevent going off any edge)
+  const left = Math.max(margin, Math.min(x, window.innerWidth - panelWidth - margin));
+  const top = Math.max(margin, Math.min(y, window.innerHeight - panelHeight - margin));
+
+  panelContainer.style.display = 'block';
+  panelContainer.style.left = `${left}px`;
+  panelContainer.style.top = `${top}px`;
+
+  // Reset state
+  const responsesEl = panelContainer.querySelector('.iap-responses');
+  while (responsesEl.firstChild) {
+    responsesEl.removeChild(responsesEl.firstChild);
+  }
+  panelContainer.querySelector('.iap-error').style.display = 'none';
+  panelContainer.querySelector('.iap-feedback-input').value = '';
+}
+
+/**
+ * Hide panel
+ */
+function hidePanel() {
+  if (panelContainer) {
+    panelContainer.style.display = 'none';
+  }
+  currentTweetData = null;
+  cachedBatchResult = null; // Clear cached responses
+}
+
+/**
+ * Reposition panel to stay within viewport bounds
+ * Called after content changes that may affect panel size
+ */
+function repositionPanel() {
+  if (!panelContainer || panelContainer.style.display === 'none') {
+    return;
+  }
+
+  const rect = panelContainer.getBoundingClientRect();
+  const margin = 10;
+
+  let left = rect.left;
+  let top = rect.top;
+
+  // Adjust if going off right edge
+  if (rect.right > window.innerWidth - margin) {
+    left = window.innerWidth - rect.width - margin;
+  }
+  // Adjust if going off left edge
+  if (left < margin) {
+    left = margin;
+  }
+  // Adjust if going off bottom edge
+  if (rect.bottom > window.innerHeight - margin) {
+    top = window.innerHeight - rect.height - margin;
+  }
+  // Adjust if going off top edge
+  if (top < margin) {
+    top = margin;
+  }
+
+  panelContainer.style.left = `${left}px`;
+  panelContainer.style.top = `${top}px`;
+}
+
+/**
+ * Display loading state
+ */
+function showLoading() {
+  if (panelContainer) {
+    panelContainer.querySelector('.iap-loading').style.display = 'flex';
+    panelContainer.querySelector('.iap-error').style.display = 'none';
+  }
+}
+
+/**
+ * Hide loading state
+ */
+function hideLoading() {
+  if (panelContainer) {
+    panelContainer.querySelector('.iap-loading').style.display = 'none';
+  }
+}
+
+/**
+ * Display error message
+ * @param {string} message - Error message
+ */
+function showError(message) {
+  if (panelContainer) {
+    const errorEl = panelContainer.querySelector('.iap-error');
+    errorEl.textContent = message;
+    errorEl.style.display = 'block';
+    hideLoading();
+    repositionPanel();
+  }
+}
+
+/**
+ * Create response card element
+ * @param {Object} response - Response object
+ * @param {number} index - Response index
+ * @param {string} responseType - 'reply' or 'quote' - determines which action button to show
+ * @returns {Element} Response card element
+ */
+function createResponseCard(response, index, responseType) {
+  const card = createElement('div', { className: 'iap-response-card' });
+
+  const charCount = response.text.length;
+  const charClass = charCount > 280 ? 'over' : charCount > 260 ? 'warn' : 'ok';
+
+  // Header
+  const header = createElement('div', { className: 'iap-response-header' }, [
+    createElement('span', { className: 'iap-response-num', textContent: `#${index + 1}` }),
+    createElement('span', {
+      className: 'iap-response-tone',
+      textContent: response.tone || 'Standard',
+    }),
+    createElement('span', {
+      className: `iap-char-count ${charClass}`,
+      textContent: `${charCount}/280`,
+    }),
+  ]);
+
+  // Text content
+  const textEl = createElement('div', {
+    className: 'iap-response-text',
+    textContent: response.text,
+  });
+
+  // Actions - Copy button always shown
+  const copyBtn = createElement('button', {
+    className: 'iap-action-btn iap-copy-btn',
+    title: 'Copy to clipboard',
+  });
+  copyBtn.appendChild(createIcon('copy', '14px'));
+  copyBtn.appendChild(document.createTextNode('Copy'));
+
+  const actionButtons = [copyBtn];
+
+  // Reply button - only shown in Reply tab
+  if (responseType === 'reply') {
+    const replyBtn = createElement('button', {
+      className: 'iap-action-btn iap-reply-btn iap-suggested',
+      title: 'Open reply',
+    });
+    replyBtn.appendChild(createIcon('reply', '14px'));
+    replyBtn.appendChild(document.createTextNode('Reply'));
+
+    // Reply button - opens Twitter reply intent
+    replyBtn.addEventListener('click', () => {
+      const tweetId = currentTweetData?.tweetId;
+      if (tweetId) {
+        const replyUrl = `https://x.com/intent/tweet?in_reply_to=${tweetId}&text=${encodeURIComponent(response.text)}`;
+        window.open(replyUrl, '_blank');
+        // Record amplification
+        browser.runtime.sendMessage({ type: 'recordAmplification', action: 'reply' });
+      }
+    });
+
+    actionButtons.push(replyBtn);
+  }
+
+  // Quote button - only shown in Quote tab
+  if (responseType === 'quote') {
+    const quoteBtn = createElement('button', {
+      className: 'iap-action-btn iap-quote-btn iap-suggested',
+      title: 'Open quote',
+    });
+    quoteBtn.appendChild(createIcon('quote', '14px'));
+    quoteBtn.appendChild(document.createTextNode('Quote'));
+
+    // Quote button - opens Twitter quote intent with the original tweet URL in text
+    // Twitter detects the tweet URL and converts it to a quote embed
+    quoteBtn.addEventListener('click', () => {
+      const tweetUrl = currentTweetData?.url;
+      if (tweetUrl) {
+        const textWithQuote = `${response.text}\n\n${tweetUrl}`;
+        const quoteIntentUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(textWithQuote)}`;
+        window.open(quoteIntentUrl, '_blank');
+        // Record amplification
+        browser.runtime.sendMessage({ type: 'recordAmplification', action: 'quote' });
+      }
+    });
+
+    actionButtons.push(quoteBtn);
+  }
+
+  const actions = createElement('div', { className: 'iap-response-actions' }, actionButtons);
+
+  card.appendChild(header);
+  card.appendChild(textEl);
+  card.appendChild(actions);
+
+  // Copy button handler
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(response.text);
+      copyBtn.replaceChildren(createIcon('check', '14px'), document.createTextNode('Copied!'));
+      setTimeout(() => {
+        copyBtn.replaceChildren(createIcon('copy', '14px'), document.createTextNode('Copy'));
+      }, 2000);
+      // Record amplification
+      browser.runtime.sendMessage({ type: 'recordAmplification', action: 'copy' });
+    } catch (err) {
+      console.error('Copy failed:', err);
+    }
+  });
+
+  return card;
+}
+
+/**
+ * Display responses for a specific tab from cached batch result
+ * @param {Object} batchResult - The cached batch result with analysis, replies, and quotes
+ * @param {string} responseType - 'reply' or 'quote'
+ */
+function displayResponsesForTab(batchResult, responseType) {
+  const container = panelContainer.querySelector('.iap-responses');
+  while (container.firstChild) {
+    container.removeChild(container.firstChild);
+  }
+
+  // Show analysis if available
+  if (batchResult.analysis) {
+    const analysisEl = createElement('div', { className: 'iap-analysis' }, [
+      createElement('span', {
+        className: 'iap-analysis-label',
+        textContent: 'Original post:',
+      }),
+      createElement('span', {
+        className: `iap-sentiment ${batchResult.analysis.post_sentiment}`,
+        textContent: batchResult.analysis.post_sentiment,
+      }),
+      createElement('span', {
+        className: 'iap-approach',
+        textContent: batchResult.analysis.recommended_approach || '',
+      }),
+    ]);
+    container.appendChild(analysisEl);
+  }
+
+  // Get responses for the current tab (select replies or quotes based on tab)
+  const responses = responseType === 'reply' ? batchResult.replies || [] : batchResult.quotes || [];
+
+  // Show responses
+  if (responses.length > 0) {
+    responses.forEach((response, index) => {
+      container.appendChild(createResponseCard(response, index, responseType));
+    });
+  } else {
+    container.appendChild(
+      createElement('div', {
+        className: 'iap-no-results',
+        textContent: 'No responses generated',
+      })
+    );
+  }
+
+  // Reposition panel after content changes to stay within viewport
+  repositionPanel();
+}
+
+/**
+ * Display responses in panel
+ * @param {Object} result - API result
+ */
+function displayResponses(result) {
+  // Cache the result for tab switching
+  cachedBatchResult = result;
+
+  // Display using the tab-specific function
+  displayResponsesForTab(result, currentResponseType);
+}
+
+/**
+ * Generate responses and display them
+ * @param {string|null} feedback - Optional feedback for iteration
+ * @param {boolean} forceRegenerate - Force new generation (skip cache)
+ */
+async function generateAndDisplay(feedback = null, forceRegenerate = false) {
+  if (!currentTweetData) {
+    return;
+  }
+
+  showLoading();
+
+  try {
+    const response = await browser.runtime.sendMessage({
+      type: 'generate',
+      tweetData: currentTweetData,
+      responseType: currentResponseType,
+      feedback,
+      forceRegenerate,
+    });
+
+    hideLoading();
+
+    if (response.success) {
+      displayResponses(response.data);
+    } else {
+      showError(response.error || 'Generation failed');
+    }
+  } catch (error) {
+    console.error('Generation error:', error);
+    showError(error.message || 'Failed to communicate with extension');
+  }
+}
+
+/**
+ * Handle amplify button click
+ * @param {Event} event - Click event
+ * @param {Element} tweetElement - Tweet element
+ */
+function handleAmplifyClick(event, tweetElement) {
+  event.stopPropagation();
+  event.preventDefault();
+
+  const tweetData = extractTweetData(tweetElement);
+  if (!tweetData || !tweetData.text) {
+    alert('Could not extract post data. Please try again.');
+    return;
+  }
+
+  // Clear cached responses when switching to a different tweet
+  if (currentTweetData?.tweetId !== tweetData.tweetId) {
+    cachedBatchResult = null;
+  }
+
+  currentTweetData = tweetData;
+  currentResponseType = 'reply';
+
+  // Show panel near the button
+  const rect = event.target.getBoundingClientRect();
+  showPanel(rect.left, rect.bottom + 10);
+
+  // Reset type selector
+  if (panelContainer) {
+    panelContainer.querySelectorAll('.iap-type-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.type === 'reply');
+    });
+  }
+
+  // Generate initial responses
+  generateAndDisplay();
+}
+
+/**
+ * Inject amplify button into a tweet
+ * @param {Element} tweetElement - Tweet article element
+ */
+function injectButton(tweetElement) {
+  // Check if button already injected
+  if (tweetElement.querySelector('.iran-amplifier-btn')) {
+    return;
+  }
+
+  // Find the action bar (contains reply, retweet, like buttons)
+  const actionBar = tweetElement.querySelector('[role="group"]');
+  if (!actionBar) {
+    return;
+  }
+
+  // Create and inject button
+  const button = createAmplifyButton();
+  button.addEventListener('click', (e) => handleAmplifyClick(e, tweetElement));
+
+  // Create wrapper to match Twitter's button styling
+  const wrapper = createElement('div', { className: 'iran-amplifier-wrapper' }, [button]);
+
+  actionBar.appendChild(wrapper);
+}
+
+/**
+ * Process all tweets on the page
+ */
+function processTweets() {
+  const tweets = document.querySelectorAll('article[data-testid="tweet"]');
+  tweets.forEach(injectButton);
+}
+
+// ============================================
+// COMPOSE DIALOG (Quote Tweet) FUNCTIONALITY
+// ============================================
+
+/**
+ * Extract tweet data from the quoted/replied tweet in compose dialog
+ * @param {Element} dialogElement - The compose dialog element
+ * @returns {Object|null} Tweet data or null if extraction failed
+ */
+function extractTweetFromDialog(dialogElement) {
+  try {
+    // Look for tweet text in the dialog (the tweet being replied to or quoted)
+    const tweetTextElements = dialogElement.querySelectorAll('[data-testid="tweetText"]');
+
+    let textElement = null;
+    let authorElement = null;
+    let tweetUrl = '';
+
+    // Find the tweet text that's NOT in the compose area
+    for (const el of tweetTextElements) {
+      // Skip if it's inside the compose textarea
+      if (el.closest('[data-testid="tweetTextarea_0"]')) {
+        continue;
+      }
+      textElement = el;
+
+      // Find author and URL near this text
+      const container =
+        el.closest('div[data-testid="Tweet-User-Avatar"]')?.parentElement ||
+        el.closest('article') ||
+        el.parentElement?.parentElement?.parentElement;
+
+      if (container) {
+        // Look for author link
+        const authorLinks = container.querySelectorAll('a[role="link"]');
+        for (const link of authorLinks) {
+          const href = link.getAttribute('href');
+          if (href && href.startsWith('/') && !href.includes('/status/')) {
+            authorElement = link;
+            break;
+          }
+        }
+        // Look for status link
+        const statusLinks = container.querySelectorAll('a[href*="/status/"]');
+        if (statusLinks.length > 0) {
+          tweetUrl = statusLinks[0].href;
+        }
+      }
+      break;
+    }
+
+    if (!textElement) {
+      return null;
+    }
+
+    const text = textElement.innerText;
+
+    // Extract author
+    let author = '';
+    let authorHandle = '';
+    if (authorElement) {
+      const href = authorElement.getAttribute('href');
+      if (href) {
+        authorHandle = href.slice(1);
+        author = `@${authorHandle}`;
+      }
+    }
+
+    // Extract tweet ID
+    let tweetId = '';
+    if (tweetUrl) {
+      const match = tweetUrl.match(/status\/(\d+)/);
+      if (match) {
+        tweetId = match[1];
+      }
+    }
+
+    return {
+      tweetId,
+      url: tweetUrl,
+      text,
+      author,
+      authorHandle,
+      quotedTweet: null,
+      hasMedia: false,
+    };
+  } catch (error) {
+    console.error('Error extracting tweet from dialog:', error);
+    return null;
+  }
+}
+
+/**
+ * Create the toolbar amplify button for compose dialog
+ * @returns {Element} Button element
+ */
+function createToolbarAmplifyButton() {
+  const iconSpan = createElement('span', { className: 'iran-amplifier-toolbar-icon' });
+  iconSpan.appendChild(createFlagIcon('18px'));
+  const button = createElement(
+    'button',
+    {
+      className: 'iran-amplifier-toolbar-btn',
+      title: 'Generate response with Iran Amplifier',
+      type: 'button',
+    },
+    [iconSpan]
+  );
+  return button;
+}
+
+/**
+ * Handle amplify button click in compose dialog - shows the panel
+ * @param {Event} event - Click event
+ * @param {Element} dialogElement - The compose dialog
+ */
+function handleComposeAmplifyClick(event, dialogElement) {
+  event.stopPropagation();
+  event.preventDefault();
+
+  const tweetData = extractTweetFromDialog(dialogElement);
+  if (!tweetData || !tweetData.text) {
+    alert('Could not extract post data. Please try again.');
+    return;
+  }
+
+  // Clear cached responses when switching to a different tweet
+  if (currentTweetData?.tweetId !== tweetData.tweetId) {
+    cachedBatchResult = null;
+  }
+
+  currentTweetData = tweetData;
+  currentResponseType = 'reply';
+
+  // Show panel near the button
+  const rect = event.target.getBoundingClientRect();
+  showPanel(rect.left - 350, rect.top - 400);
+
+  // Reset type selector
+  if (panelContainer) {
+    panelContainer.querySelectorAll('.iap-type-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.type === 'reply');
+    });
+  }
+
+  // Generate initial responses
+  generateAndDisplay();
+}
+
+/**
+ * Inject amplify button into compose dialog toolbar
+ * @param {Element} dialogElement - The compose dialog element
+ */
+function injectComposeButton(dialogElement) {
+  // Check if already injected
+  if (dialogElement.querySelector('.iran-amplifier-toolbar-btn')) {
+    return;
+  }
+
+  // Check if this dialog has a tweet to respond to
+  const hasTweet = !!dialogElement.querySelector('[data-testid="tweetText"]');
+  if (!hasTweet) {
+    return;
+  }
+
+  // Find the Post/Reply button using stable data-testid
+  const postButton = dialogElement.querySelector(
+    '[data-testid="tweetButton"], [data-testid="tweetButtonInline"]'
+  );
+
+  if (postButton) {
+    const postParent = postButton.parentElement;
+    if (!postParent || !postParent.parentElement) {
+      return;
+    }
+
+    // Create our button
+    const button = createToolbarAmplifyButton();
+    button.addEventListener('click', (e) => handleComposeAmplifyClick(e, dialogElement));
+
+    // Create wrapper with same classes as post button's parent for alignment
+    const wrapper = document.createElement('div');
+    wrapper.className = postParent.className + ' iran-amplifier-toolbar-wrapper';
+    wrapper.appendChild(button);
+
+    // Insert before post button's parent
+    postParent.parentElement.insertBefore(wrapper, postParent);
+  }
+}
+
+/**
+ * Process compose dialogs on the page
+ */
+function processComposeDialogs() {
+  const dialogs = document.querySelectorAll('[role="dialog"], [aria-modal="true"]');
+
+  dialogs.forEach((dialog) => {
+    const hasComposeArea = dialog.querySelector('[data-testid="tweetTextarea_0"]');
+    if (hasComposeArea) {
+      injectComposeButton(dialog);
+    }
+  });
+}
+
+// ============================================
+// ONBOARDING MODAL FUNCTIONALITY
+// ============================================
+
+/**
+ * Create a question section for the onboarding modal
+ * @param {string} name - Input name attribute
+ * @param {string} label - Question label
+ * @param {Array} options - Array of { id, label } options
+ * @param {string} defaultValue - Default selected value
+ * @returns {Element} Question section element
+ */
+function createQuestionSection(name, label, options, defaultValue) {
+  const section = createElement('div', { className: 'iap-onboard-question' });
+  const labelEl = createElement('label', { className: 'iap-onboard-label', textContent: label });
+  section.appendChild(labelEl);
+
+  const optionsContainer = createElement('div', { className: 'iap-onboard-options' });
+  options.forEach((opt) => {
+    const optionEl = createElement('label', { className: 'iap-onboard-option' }, [
+      createElement('input', {
+        type: 'radio',
+        name: name,
+        value: opt.id,
+        ...(opt.id === defaultValue ? { checked: 'checked' } : {}),
+      }),
+      createElement('span', { textContent: opt.label }),
+    ]);
+    // Set checked attribute properly
+    if (opt.id === defaultValue) {
+      optionEl.querySelector('input').checked = true;
+    }
+    optionsContainer.appendChild(optionEl);
+  });
+
+  section.appendChild(optionsContainer);
+  return section;
+}
+
+/**
+ * Create the onboarding modal
+ * @returns {Element} Modal element
+ */
+function createOnboardingModal() {
+  const overlay = createElement('div', { className: 'iap-onboard-overlay' });
+  const modal = createElement('div', { className: 'iap-onboard-modal' });
+
+  // Header
+  const flagIcon = createFlagIcon('48px');
+  flagIcon.className = 'iap-onboard-icon';
+
+  const header = createElement('div', { className: 'iap-onboard-header' }, [
+    flagIcon,
+    createElement('h2', { textContent: 'Personalize Your Voice' }),
+    createElement('p', {
+      textContent:
+        'Help us generate unique responses that match your style. You can change these later in settings.',
+    }),
+  ]);
+
+  // Questions container
+  const questions = createElement('div', { className: 'iap-onboard-questions' });
+  questions.appendChild(
+    createQuestionSection(
+      'voiceStyle',
+      'How do you prefer to communicate?',
+      VOICE_STYLES,
+      'personal'
+    )
+  );
+  questions.appendChild(
+    createQuestionSection('background', "What's your background?", BACKGROUNDS, 'other')
+  );
+  questions.appendChild(
+    createQuestionSection('approach', 'What resonates with you?', APPROACHES, 'mixed')
+  );
+  questions.appendChild(
+    createQuestionSection('length', 'Preferred response length?', LENGTHS, 'medium')
+  );
+
+  // Actions
+  const actions = createElement('div', { className: 'iap-onboard-actions' }, [
+    createElement('button', { className: 'iap-onboard-skip', textContent: 'Skip for now' }),
+    createElement('button', { className: 'iap-onboard-save', textContent: 'Save Preferences' }),
+  ]);
+
+  modal.appendChild(header);
+  modal.appendChild(questions);
+  modal.appendChild(actions);
+  overlay.appendChild(modal);
+
+  // Event listeners
+  actions.querySelector('.iap-onboard-skip').addEventListener('click', () => {
+    hideOnboardingModal();
+    completeOnboardingRemote();
+  });
+
+  actions.querySelector('.iap-onboard-save').addEventListener('click', () => {
+    saveOnboardingPreferences();
+  });
+
+  return overlay;
+}
+
+/**
+ * Show the onboarding modal
+ */
+function showOnboardingModal() {
+  if (!onboardingModal) {
+    onboardingModal = createOnboardingModal();
+    document.body.appendChild(onboardingModal);
+  }
+  onboardingModal.style.display = 'flex';
+}
+
+/**
+ * Hide the onboarding modal
+ */
+function hideOnboardingModal() {
+  if (onboardingModal) {
+    onboardingModal.style.display = 'none';
+  }
+}
+
+/**
+ * Mark onboarding complete via background script
+ */
+async function completeOnboardingRemote() {
+  try {
+    await browser.runtime.sendMessage({ type: 'completeOnboarding' });
+  } catch (error) {
+    console.error('Failed to complete onboarding:', error);
+  }
+}
+
+/**
+ * Save onboarding preferences
+ */
+async function saveOnboardingPreferences() {
+  if (!onboardingModal) {
+    return;
+  }
+
+  const preferences = {
+    voiceStyle:
+      onboardingModal.querySelector('input[name="voiceStyle"]:checked')?.value || 'personal',
+    background: onboardingModal.querySelector('input[name="background"]:checked')?.value || 'other',
+    approach: onboardingModal.querySelector('input[name="approach"]:checked')?.value || 'mixed',
+    length: onboardingModal.querySelector('input[name="length"]:checked')?.value || 'medium',
+  };
+
+  try {
+    await browser.runtime.sendMessage({ type: 'saveUserPreferences', preferences });
+    await completeOnboardingRemote();
+    hideOnboardingModal();
+  } catch (error) {
+    console.error('Failed to save preferences:', error);
+  }
+}
+
+/**
+ * Check if onboarding should be shown
+ */
+async function checkOnboarding() {
+  try {
+    const response = await browser.runtime.sendMessage({ type: 'isOnboardingComplete' });
+    if (response.success && !response.data) {
+      // Small delay to ensure page is loaded
+      setTimeout(showOnboardingModal, 1500);
+    }
+  } catch (error) {
+    console.error('Failed to check onboarding status:', error);
+  }
+}
+
+// Initialize observer for dynamically loaded tweets and dialogs
+const observer = new MutationObserver((mutations) => {
+  for (const mutation of mutations) {
+    if (mutation.addedNodes.length) {
+      processTweets();
+      processComposeDialogs();
+    }
+  }
+});
+
+// Start observing
+observer.observe(document.body, {
+  childList: true,
+  subtree: true,
+});
+
+// Initial processing
+processTweets();
+processComposeDialogs();
+
+// Check if onboarding should be shown
+checkOnboarding();
+
+// Close panel when clicking outside
+document.addEventListener('click', (e) => {
+  if (
+    panelContainer &&
+    panelContainer.style.display !== 'none' &&
+    !panelContainer.contains(e.target) &&
+    !e.target.closest('.iran-amplifier-btn')
+  ) {
+    hidePanel();
+  }
+});
+
+// Close panel on escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    hidePanel();
+  }
+});
+
+console.log('Iran Amplifier content script loaded');

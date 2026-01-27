@@ -1,0 +1,117 @@
+// ==========================================================================
+// Buttons
+// ==========================================================================
+// Button component styles used across all pages.
+
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// --------------------------------------------------------------------------
+// Base Button
+// --------------------------------------------------------------------------
+.btn {
+  @include button-base;
+
+  padding: 11px 22px;
+  font-size: $font-size-base;
+
+  // Size variants
+  &.small {
+    padding: $spacing-sm $spacing-lg;
+    font-size: $font-size-md;
+  }
+
+  &.full-width {
+    width: 100%;
+  }
+
+  // Primary variant
+  &.primary {
+    background: $accent-500;
+    color: #000;
+    box-shadow: $shadow-sm;
+
+    &:hover:not(:disabled) {
+      background: $accent-400;
+      box-shadow: $shadow-md;
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    &:disabled {
+      background: var(--border-primary);
+      color: var(--text-secondary);
+      cursor: not-allowed;
+    }
+  }
+
+  // Secondary variant
+  &.secondary {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
+
+    &:hover {
+      border-color: $accent-500;
+      color: $accent-500;
+      background: rgba($accent-500, 0.1);
+    }
+  }
+
+  // Danger variant
+  &.danger {
+    background: transparent;
+    border: 1px solid $color-error;
+    color: $color-error;
+
+    &:hover {
+      background: rgba($color-error, 0.1);
+    }
+  }
+}
+
+// --------------------------------------------------------------------------
+// Link Button
+// --------------------------------------------------------------------------
+.btn-link {
+  background: none;
+  border: none;
+  color: $accent-500;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color $transition-base;
+  padding: $spacing-xs $spacing-sm;
+
+  &:hover {
+    color: $accent-400;
+    text-decoration: underline;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Icon Button
+// --------------------------------------------------------------------------
+.icon-btn {
+  padding: 10px $spacing-base;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-md;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all $transition-base;
+
+  &:hover {
+    border-color: $accent-500;
+    color: $accent-500;
+    background: rgba($accent-500, 0.1);
+  }
+
+  .icon-eye {
+    display: block;
+  }
+}

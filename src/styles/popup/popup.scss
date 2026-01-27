@@ -1,0 +1,133 @@
+// ==========================================================================
+// Popup Styles
+// ==========================================================================
+// Extension popup UI styles.
+
+@use '../variables' as *;
+@use '../mixins' as *;
+@use '../base' as base;
+@use '../buttons';
+@use '../forms';
+@use '../toggles';
+@use '../stats';
+@use '../panels';
+
+// --------------------------------------------------------------------------
+// Font Import
+// --------------------------------------------------------------------------
+@import 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap';
+
+// --------------------------------------------------------------------------
+// Body
+// --------------------------------------------------------------------------
+body {
+  @include base.body-base;
+
+  min-width: $popup-min-width;
+  max-width: $popup-max-width;
+}
+
+// --------------------------------------------------------------------------
+// Container
+// --------------------------------------------------------------------------
+.popup-container {
+  padding: 0;
+}
+
+// --------------------------------------------------------------------------
+// Header
+// --------------------------------------------------------------------------
+.popup-header {
+  background: var(--surface-secondary);
+  border-bottom: 1px solid var(--border-primary);
+  padding: $spacing-base $spacing-xl;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-lg;
+
+  h1 {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    letter-spacing: $letter-spacing-normal;
+    color: var(--text-primary);
+  }
+}
+
+.header-flag {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+}
+
+.tagline {
+  font-size: $font-size-sm + 1;
+  color: var(--text-secondary);
+  font-weight: $font-weight-normal;
+}
+
+// --------------------------------------------------------------------------
+// Main Content
+// --------------------------------------------------------------------------
+.popup-main {
+  padding: $spacing-lg;
+}
+
+// --------------------------------------------------------------------------
+// Sections
+// --------------------------------------------------------------------------
+.settings-section {
+  margin-bottom: $spacing-2xl;
+  padding-bottom: $spacing-xl;
+  border-bottom: 1px solid var(--border-primary);
+
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  h2 {
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    color: var(--text-secondary);
+    margin-bottom: $spacing-base;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-transform: uppercase;
+    letter-spacing: $letter-spacing-wider;
+  }
+}
+
+// Stats section header override
+.stats-section h2 {
+  margin-bottom: $spacing-base;
+}
+
+// --------------------------------------------------------------------------
+// Section Intro
+// --------------------------------------------------------------------------
+.section-intro {
+  font-size: $font-size-md;
+  color: var(--text-secondary);
+  margin-bottom: $spacing-2xl - 6;
+  line-height: $line-height-normal;
+}
+
+// --------------------------------------------------------------------------
+// SVG Icons alignment
+// --------------------------------------------------------------------------
+#save-settings svg,
+.validation-icon svg {
+  vertical-align: -2px;
+  margin-right: $spacing-xs;
+}
+
+// --------------------------------------------------------------------------
+// Scrollbar
+// --------------------------------------------------------------------------
+@include base.global-scrollbar;
