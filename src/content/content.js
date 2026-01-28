@@ -437,6 +437,7 @@ function createAmplifyButton() {
     {
       className: 'iran-amplifier-btn',
       title: 'Generate response with Iran Amplifier',
+      'aria-label': 'Amplify this post with Iran Amplifier',
     },
     [icon, text]
   );
@@ -456,7 +457,12 @@ function createPanel() {
   titleSpan.appendChild(document.createTextNode(' Iran Amplifier'));
   const header = createElement('div', { className: 'iap-header' }, [
     titleSpan,
-    createElement('button', { className: 'iap-close', title: 'Close', textContent: '×' }),
+    createElement('button', {
+      className: 'iap-close',
+      title: 'Close',
+      'aria-label': 'Close panel',
+      textContent: '×',
+    }),
   ]);
 
   // Type selector
@@ -503,6 +509,7 @@ function createPanel() {
   const feedbackBtn = createElement('button', {
     className: 'iap-feedback-btn',
     title: 'Regenerate',
+    'aria-label': 'Regenerate responses',
   });
   feedbackBtn.appendChild(createIcon('refresh', '16px'));
   const feedback = createElement('div', { className: 'iap-feedback' }, [
@@ -1104,6 +1111,7 @@ function createToolbarAmplifyButton() {
     {
       className: 'iran-amplifier-toolbar-btn',
       title: 'Generate response with Iran Amplifier',
+      'aria-label': 'Generate response with Iran Amplifier',
       type: 'button',
     },
     [iconSpan]

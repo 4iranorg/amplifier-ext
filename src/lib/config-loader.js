@@ -241,7 +241,7 @@ export const CONFIG_DEFAULTS = {
 1. ALWAYS include the hashtag #IranRevolution2026
 2. You MAY include ONE additional hashtag from the user's optional hashtags list, only if highly relevant
 3. Each response MUST fit within a single post (max 280 characters)
-4. Generate exactly 6 responses total: 3 REPLY responses and 3 QUOTE responses
+4. Generate exactly 3 responses of the type specified in the TASK section (reply OR quote)
 5. REPLY responses are direct replies to the original post
 6. QUOTE responses are quote reposts with commentary that can stand alone
 
@@ -257,19 +257,30 @@ Previous responses are shown with explicit numbering (#1, #2, #3). When user pro
 - Return 1-3 responses based on what makes sense
 
 ## OUTPUT FORMAT (STRICT)
-Return a JSON object with EXACTLY this structure:
+Return a JSON object with EXACTLY this structure. Include ONLY the response type requested in the TASK:
+
+For REPLY requests:
 {
   "analysis": {
     "post_sentiment": "supportive|critical|neutral",
     "key_topics": ["topic1", "topic2"],
     "recommended_approach": "brief strategy note"
   },
-  "replies": [
+  "responses": [
     { "text": "Full reply text including hashtag(s)", "tone": "tone style used" },
     { "text": "Second reply variation", "tone": "tone style used" },
     { "text": "Third reply variation", "tone": "tone style used" }
-  ],
-  "quotes": [
+  ]
+}
+
+For QUOTE requests:
+{
+  "analysis": {
+    "post_sentiment": "supportive|critical|neutral",
+    "key_topics": ["topic1", "topic2"],
+    "recommended_approach": "brief strategy note"
+  },
+  "responses": [
     { "text": "Full quote text including hashtag(s)", "tone": "tone style used" },
     { "text": "Second quote variation", "tone": "tone style used" },
     { "text": "Third quote variation", "tone": "tone style used" }

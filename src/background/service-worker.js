@@ -581,7 +581,10 @@ async function generateResponses(
   }
 
   // Update tab-specific conversation history
-  tabContext.history.push({ role: 'user', content: userInput });
+  // On first generation, include developer context so refinements have full tweet data
+  const historyUserContent =
+    tabContext.history.length === 0 ? `${developerContext}\n\n${userInput}` : userInput;
+  tabContext.history.push({ role: 'user', content: historyUserContent });
 
   // Get responses from result (may be in 'responses', 'replies', or 'quotes' depending on model)
   const responses =
