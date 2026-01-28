@@ -43,13 +43,14 @@ Help the user release a new version of the extension. Follow these steps:
 
 - Only include sections (Added/Changed/Fixed/Removed) that have content
 
-### 4. Update manifest.json
+### 4. Update version files
 
-- Update the `"version"` field to the new version
+- Update `"version"` in `manifest.json`
+- Update `"version"` in `package.json`
 
 ### 5. Commit and tag
 
-- Stage changes: `git add manifest.json CHANGELOG.md`
+- Stage changes: `git add manifest.json package.json CHANGELOG.md`
 - Include any other uncommitted changes the user confirmed
 - Commit with message: `Release vX.Y.Z`
 - Create tag: `git tag vX.Y.Z`

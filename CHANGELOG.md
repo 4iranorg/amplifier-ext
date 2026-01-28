@@ -5,6 +5,30 @@ All notable changes to Iran Amplifier will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-01-28
+
+### Added
+
+- Response panel analytics showing generation stats: `In: 3.0k | Out: 308 | Cached: 1.0k | Time: 5.9s`
+- Cached token tracking for OpenAI and Anthropic APIs
+- Build script with esbuild for faster development
+
+### Changed
+
+- Default model changed from `gpt-5-mini` to `gpt-4.1-mini` for faster responses
+- Disabled validation retries (`MAX_VALIDATION_RETRIES = 0`) for speed
+- Popup auto-closes after saving settings
+- On-demand tab generation with separate contexts for Reply/Quote tabs
+
+### Fixed
+
+- Quote intent now correctly embeds original tweet (appends URL to text per X Web Intent docs)
+
+### Removed
+
+- Excluded source pattern validation (NIAC, etc.)
+- Threat/incitement pattern validation
+
 ## [0.1.0] - 2026-01-27
 
 Initial pre-release. Using 0.x versioning to indicate early development before Firefox Add-ons store release.

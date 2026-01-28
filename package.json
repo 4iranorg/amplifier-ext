@@ -1,6 +1,7 @@
 {
   "private": true,
   "name": "amplifier",
+  "version": "0.1.1",
   "type": "module",
   "description": "Build tools for Iran Amplifier browser extension",
   "scripts": {
