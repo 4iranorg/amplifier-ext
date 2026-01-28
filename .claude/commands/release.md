@@ -53,13 +53,15 @@ Help the user release a new version of the extension. Follow these steps:
 - Stage changes: `git add manifest.json package.json CHANGELOG.md`
 - Include any other uncommitted changes the user confirmed
 - Commit with message: `Release vX.Y.Z`
-- Create tag: `git tag vX.Y.Z`
+- Create version tag: `git tag vX.Y.Z`
+- Update `latest` tag: `git tag -f latest`
 
 ### 6. Push
 
 - Ask user to confirm before pushing
 - Push commits: `git push`
-- Push tags: `git push --tags`
+- Push version tag: `git push --tags`
+- Force push `latest` tag: `git push -f origin latest`
 
 ### 7. Confirm
 
