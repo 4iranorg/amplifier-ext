@@ -17,7 +17,12 @@ import {
   getUsageStats,
   getActivityLog,
 } from '../lib/cost-tracker.js';
-import { getCachedProfile, cacheProfile, detectCategory } from '../lib/profile-cache.js';
+import {
+  getCachedProfile,
+  cacheProfile,
+  detectCategory,
+  cleanupExpiredProfiles,
+} from '../lib/profile-cache.js';
 import { checkForUpdate, getCachedUpdateInfo, dismissUpdate } from '../lib/updater.js';
 import {
   initConfig,
@@ -423,23 +428,30 @@ async function generateResponses(
   const authorHandle = tweetData.author?.handle || tweetData.authorHandle;
   const authorDisplayName = tweetData.author?.displayName || tweetData.author || '';
   const authorIsVerified = tweetData.author?.isVerified || tweetData.isVerified || false;
+  const authorBio = tweetData.author?.bio || '';
 
   if (authorHandle) {
     profileContext = await getCachedProfile(authorHandle);
 
-    if (!profileContext) {
-      // Cache the profile with what we know
-      const category = detectCategory('', authorDisplayName);
+    // Update cache if we have new bio data or no cached profile
+    if (!profileContext || (authorBio && !profileContext.bio)) {
+      // Cache the profile with what we know (including bio if available)
+      const category = detectCategory(authorBio, authorDisplayName);
       const newProfile = {
         handle: authorHandle,
         displayName: authorDisplayName,
-        bio: '',
-        followerCount: 0,
+        bio: authorBio,
+        followerCount: profileContext?.followerCount || 0,
         category: category,
         isVerified: authorIsVerified,
       };
       await cacheProfile(newProfile);
       profileContext = await getCachedProfile(authorHandle);
+
+      // Log bio for verification
+      if (authorBio) {
+        console.log(`[Amplifier] Cached bio for @${authorHandle}:`, authorBio);
+      }
     }
   }
 
@@ -978,6 +990,10 @@ browser.runtime.onInstalled.addListener(async (details) => {
 initConfig()
   .then(() => {
     console.log('Config initialized');
+    // Clean up expired profile cache entries
+    return cleanupExpiredProfiles();
+  })
+  .then(() => {
     // Initialize user seed for personalization
     return initializeUserSeed();
   })

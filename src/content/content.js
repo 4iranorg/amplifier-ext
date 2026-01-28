@@ -138,6 +138,127 @@ const LENGTHS = [
 ];
 
 /**
+ * Wait for an element to appear in the DOM
+ * @param {string} selector - CSS selector
+ * @param {number} timeout - Timeout in milliseconds
+ * @param {Element} parent - Parent element to search within (defaults to document)
+ * @returns {Promise<Element|null>} Element or null if timeout
+ */
+function waitForElement(selector, timeout = 2000, parent = document) {
+  return new Promise((resolve) => {
+    const existing = parent.querySelector(selector);
+    if (existing) {
+      resolve(existing);
+      return;
+    }
+
+    const observer = new MutationObserver(() => {
+      const el = parent.querySelector(selector);
+      if (el) {
+        observer.disconnect();
+        resolve(el);
+      }
+    });
+
+    observer.observe(parent, { childList: true, subtree: true });
+
+    setTimeout(() => {
+      observer.disconnect();
+      resolve(null);
+    }, timeout);
+  });
+}
+
+/**
+ * Extract author bio by triggering X's hover card
+ * @param {Element} tweetElement - The tweet article element
+ * @returns {Promise<string>} Bio text or empty string
+ */
+async function _extractAuthorBio(tweetElement) {
+  try {
+    // Find the profile link (avatar or username)
+    const profileLink = tweetElement.querySelector(
+      '[data-testid="User-Name"] a[href^="/"], [data-testid="Tweet-User-Avatar"] a[href^="/"]'
+    );
+    if (!profileLink) {
+      console.log('[Amplifier] Bio extraction: No profile link found');
+      return '';
+    }
+
+    const handle = profileLink.getAttribute('href')?.slice(1) || 'unknown';
+    console.log(`[Amplifier] Attempting bio extraction for @${handle}...`);
+
+    // Try multiple event types to trigger hover card
+    const rect = profileLink.getBoundingClientRect();
+    const eventOptions = {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + rect.height / 2,
+    };
+
+    // Try pointerenter first (X likely uses pointer events)
+    profileLink.dispatchEvent(new PointerEvent('pointerenter', eventOptions));
+    profileLink.dispatchEvent(new MouseEvent('mouseenter', eventOptions));
+    profileLink.dispatchEvent(new MouseEvent('mouseover', eventOptions));
+
+    // Wait for hover card to appear
+    const hoverCard = await waitForElement('[data-testid="HoverCard"]', 2000);
+    if (!hoverCard) {
+      console.log(`[Amplifier] Bio extraction: Hover card did not appear for @${handle}`);
+      profileLink.dispatchEvent(new PointerEvent('pointerleave', eventOptions));
+      profileLink.dispatchEvent(new MouseEvent('mouseleave', eventOptions));
+      return '';
+    }
+
+    console.log(`[Amplifier] Hover card appeared for @${handle}`);
+
+    // Debug: log hover card structure
+    console.log(
+      '[Amplifier] Hover card testids:',
+      [...hoverCard.querySelectorAll('[data-testid]')].map((el) => el.dataset.testid)
+    );
+
+    // Extract bio from hover card - try multiple selectors
+    let bioElement = hoverCard.querySelector('[data-testid="UserDescription"]');
+    if (!bioElement) {
+      // Fallback: look for bio in common locations
+      bioElement = hoverCard.querySelector('[data-testid="UserBio"]');
+    }
+    if (!bioElement) {
+      // Fallback: look for the bio text container (usually after name/handle)
+      const spans = hoverCard.querySelectorAll('span');
+      for (const span of spans) {
+        // Bio is usually longer text, not a name or handle
+        const text = span.textContent?.trim() || '';
+        if (text.length > 30 && !text.startsWith('@') && !text.includes('followers')) {
+          bioElement = span;
+          break;
+        }
+      }
+    }
+    const bio = bioElement?.textContent?.trim() || '';
+
+    // Close hover card
+    profileLink.dispatchEvent(new PointerEvent('pointerleave', eventOptions));
+    profileLink.dispatchEvent(new MouseEvent('mouseleave', eventOptions));
+
+    // Log for verification
+    if (bio) {
+      console.log(`[Amplifier] Extracted bio for @${handle}:`, bio);
+    } else {
+      console.log(`[Amplifier] No bio found for @${handle}`);
+    }
+
+    return bio;
+  } catch (error) {
+    console.error('[Amplifier] Error extracting bio:', error);
+    return '';
+  }
+}
+
+/**
  * Extract profile data from a tweet element
  * @param {Element} tweetElement - The tweet article element
  * @returns {Object|null} Profile data or null
@@ -759,6 +880,7 @@ function createResponseCard(response, index, responseType) {
         window.open(replyUrl, 'amplifier-intent', 'width=620,height=720,noopener,noreferrer');
         // Record amplification
         browser.runtime.sendMessage({ type: 'recordAmplification', action: 'reply' });
+        hidePanel();
       }
     });
 
@@ -783,6 +905,7 @@ function createResponseCard(response, index, responseType) {
         window.open(quoteIntentUrl, 'amplifier-intent', 'width=620,height=720,noopener,noreferrer');
         // Record amplification
         browser.runtime.sendMessage({ type: 'recordAmplification', action: 'quote' });
+        hidePanel();
       }
     });
 
@@ -799,12 +922,9 @@ function createResponseCard(response, index, responseType) {
   copyBtn.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(response.text);
-      copyBtn.replaceChildren(createIcon('check', '14px'), document.createTextNode('Copied!'));
-      setTimeout(() => {
-        copyBtn.replaceChildren(createIcon('copy', '14px'), document.createTextNode('Copy'));
-      }, 2000);
       // Record amplification
       browser.runtime.sendMessage({ type: 'recordAmplification', action: 'copy' });
+      hidePanel();
     } catch (err) {
       console.error('Copy failed:', err);
     }
@@ -836,7 +956,7 @@ function displayResponsesForTab(result, responseType) {
       }),
       createElement('span', {
         className: `iap-sentiment ${result.analysis.post_sentiment}`,
-        textContent: result.analysis.post_sentiment,
+        textContent: result.analysis.post_sentiment.replace(/_/g, ' ').toUpperCase(),
       }),
       createElement('span', {
         className: 'iap-approach',
@@ -925,7 +1045,7 @@ async function generateAndDisplay(feedback = null, forceRegenerate = false) {
  * @param {Event} event - Click event
  * @param {Element} tweetElement - Tweet element
  */
-function handleAmplifyClick(event, tweetElement) {
+async function handleAmplifyClick(event, tweetElement) {
   event.stopPropagation();
   event.preventDefault();
 
@@ -935,8 +1055,11 @@ function handleAmplifyClick(event, tweetElement) {
     return;
   }
 
+  // Check if this is a new tweet
+  const isNewTweet = currentTweetData?.tweetId !== tweetData.tweetId;
+
   // Clear cached responses when switching to a different tweet
-  if (currentTweetData?.tweetId !== tweetData.tweetId) {
+  if (isNewTweet) {
     cachedReplyResult = null;
     cachedQuoteResult = null;
   }
@@ -954,6 +1077,15 @@ function handleAmplifyClick(event, tweetElement) {
       btn.classList.toggle('active', btn.dataset.type === 'reply');
     });
   }
+
+  // Bio extraction disabled - X's hover card API causes errors
+  // TODO: Find alternative approach (e.g., profile page scrape or manual entry)
+  // if (isNewTweet) {
+  //   const bio = await extractAuthorBio(tweetElement);
+  //   if (bio && currentTweetData?.author) {
+  //     currentTweetData.author.bio = bio;
+  //   }
+  // }
 
   // Generate initial responses
   generateAndDisplay();

@@ -154,6 +154,11 @@ export function buildDeveloperContext(
   metaParts.push(`Verified: ${isVerified ? 'yes' : 'no'}`);
   parts.push(`- ${metaParts.join(' | ')}`);
 
+  // Include bio if available
+  if (profileContext && profileContext.bio) {
+    parts.push(`- Bio: "${profileContext.bio}"`);
+  }
+
   // Media presence
   if (postData.hasMedia !== undefined) {
     parts.push(`- Contains media: ${postData.hasMedia ? 'yes' : 'no'}`);
@@ -294,6 +299,11 @@ export function buildDeveloperContextForRefine(
   }
   metaParts.push(`Verified: ${isVerified ? 'yes' : 'no'}`);
   parts.push(`- ${metaParts.join(' | ')}`);
+
+  // Include bio if available
+  if (profileContext && profileContext.bio) {
+    parts.push(`- Bio: "${profileContext.bio}"`);
+  }
 
   // Media presence
   if (postData.hasMedia !== undefined) {

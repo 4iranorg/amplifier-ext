@@ -765,7 +765,7 @@ function populateModelOptions(provider, selectedModel = null) {
   for (const model of models) {
     const option = document.createElement('option');
     option.value = model.id;
-    option.textContent = model.name;
+    option.textContent = `${model.id} | ${model.name}`;
     if (selectedModel === model.id || (!selectedModel && model.default)) {
       option.selected = true;
     }
