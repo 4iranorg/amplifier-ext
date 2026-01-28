@@ -196,7 +196,7 @@ function validateResult(result, isRefine = false, refineType = null) {
   let hasMissingHashtag = false;
 
   if (isRefine && refineType) {
-    // For refinement, check the old 'responses' format or the single type
+    // For single-type generation, check the 'responses' format or the type-specific array
     const responses = result.responses || (refineType === 'reply' ? result.replies : result.quotes);
     const typeValidation = validateResponseArray(
       responses,
@@ -212,6 +212,11 @@ function validateResult(result, isRefine = false, refineType = null) {
         fixHints: [],
         refusal: true,
       };
+    }
+    // Check similarity for single-type responses
+    if (responses && responses.length > 1 && areResponsesTooSimilar(responses)) {
+      issues.push(`${refineType}s_too_similar`);
+      fixHints.push(`Make each ${refineType} structurally different.`);
     }
   } else {
     // For batch generation, check both replies and quotes
@@ -286,6 +291,7 @@ async function getPersonalization() {
 
 /**
  * Get or create conversation context for a tweet
+ * New architecture: separate contexts per tab (reply/quote) with independent histories
  * @param {string} tweetId - Unique tweet identifier
  * @param {Object} tweetData - Initial tweet data
  * @returns {Object} Conversation context
@@ -294,13 +300,18 @@ function getContext(tweetId, tweetData = null) {
   if (!tweetContexts.has(tweetId)) {
     tweetContexts.set(tweetId, {
       tweet: tweetData,
-      history: [],
-      cachedResponses: {
-        analysis: null,
-        replies: [],
-        quotes: [],
+      // Separate contexts per tab type
+      reply: {
+        history: [],
+        responses: [],
+        lastGeneratedAt: null,
       },
-      lastGeneratedAt: null,
+      quote: {
+        history: [],
+        responses: [],
+        lastGeneratedAt: null,
+      },
+      analysis: null, // Shared analysis (set on first generation)
     });
   }
   return tweetContexts.get(tweetId);
@@ -375,10 +386,10 @@ function buildApiMessages(
 
 /**
  * Generate responses for a tweet with 4-layer prompt architecture
- * Uses batch generation (6 responses: 3 reply + 3 quote) for initial generation,
- * and single-type refinement (3 responses) when user provides feedback.
+ * Uses on-demand generation: 3 responses of a single type (reply or quote)
+ * Each tab has its own conversation history for independent refinements
  * @param {Object} tweetData - Tweet information
- * @param {string} responseType - 'reply' or 'quote' (for cache retrieval and refinement)
+ * @param {string} responseType - 'reply' or 'quote'
  * @param {string|null} feedback - User feedback for iteration
  * @param {boolean} forceRegenerate - Skip cache and generate new responses
  * @returns {Promise<Object>} Generation result with analysis and responses for the requested type
@@ -397,34 +408,38 @@ async function generateResponses(
 
   const tweetId = tweetData.tweetId || tweetData.url;
   const context = getContext(tweetId, tweetData);
+  const tabContext = context[responseType]; // Get tab-specific context
 
   // Return cached result if available (no feedback, not forcing regeneration)
-  if (!feedback && !forceRegenerate && context.cachedResponses?.replies?.length > 0) {
+  if (!feedback && !forceRegenerate && tabContext.responses?.length > 0) {
     return {
-      analysis: context.cachedResponses.analysis,
-      replies: context.cachedResponses.replies.map((r) => ({ ...r, type: 'reply' })),
-      quotes: context.cachedResponses.quotes.map((r) => ({ ...r, type: 'quote' })),
+      analysis: context.analysis,
+      responses: tabContext.responses.map((r) => ({ ...r, type: responseType })),
     };
   }
 
   // Get or cache profile for the tweet author
   let profileContext = null;
-  if (tweetData.authorHandle) {
-    profileContext = await getCachedProfile(tweetData.authorHandle);
+  const authorHandle = tweetData.author?.handle || tweetData.authorHandle;
+  const authorDisplayName = tweetData.author?.displayName || tweetData.author || '';
+  const authorIsVerified = tweetData.author?.isVerified || tweetData.isVerified || false;
+
+  if (authorHandle) {
+    profileContext = await getCachedProfile(authorHandle);
 
     if (!profileContext) {
       // Cache the profile with what we know
-      const category = detectCategory('', tweetData.author || '');
+      const category = detectCategory('', authorDisplayName);
       const newProfile = {
-        handle: tweetData.authorHandle,
-        displayName: tweetData.author || '',
+        handle: authorHandle,
+        displayName: authorDisplayName,
         bio: '',
         followerCount: 0,
         category: category,
-        isVerified: tweetData.isVerified || false,
+        isVerified: authorIsVerified,
       };
       await cacheProfile(newProfile);
-      profileContext = await getCachedProfile(tweetData.authorHandle);
+      profileContext = await getCachedProfile(authorHandle);
     }
   }
 
@@ -438,10 +453,11 @@ async function generateResponses(
   // Layer 1: Fixed system prompt (guardrails)
   const fixedPrompt = getFixedPrompt();
 
-  // Determine if this is a refinement (feedback provided) or batch generation
+  // Determine if this is a refinement (feedback provided)
   const isRefine = !!feedback;
 
   // Layer 2: Developer context (tweet, arguments, CTAs, exclusions)
+  // Both initial and refinement now use the same context builder with responseType
   const developerContext = isRefine
     ? buildDeveloperContextForRefine(
         tweetData,
@@ -450,7 +466,13 @@ async function generateResponses(
         profileContext,
         responseType
       )
-    : buildDeveloperContext(tweetData, selectedArgumentIds, selectedCTAIds, profileContext);
+    : buildDeveloperContext(
+        tweetData,
+        selectedArgumentIds,
+        selectedCTAIds,
+        profileContext,
+        responseType
+      );
 
   // Layer 3: User style prompt (with personalization)
   const userStylePrompt = buildUserStylePrompt(settings.customUserPrompt, personalization);
@@ -464,18 +486,17 @@ async function generateResponses(
       ? `User feedback: ${sanitizedFeedback}`
       : `Generate 3 new ${responseType} variations.`;
   } else {
-    // Initial batch generation request
-    userInput =
-      'Generate the 6 response variations (3 replies + 3 quotes) for the original post above.';
+    // Initial generation request for this tab type
+    userInput = `Generate the 3 ${responseType} response variations for the original post above.`;
   }
 
-  // Build API-specific message structure
+  // Build API-specific message structure using tab-specific history
   const { systemPrompt, messages } = buildApiMessages(
     settings.provider,
     fixedPrompt,
     developerContext,
     userStylePrompt,
-    context.history,
+    tabContext.history,
     userInput
   );
 
@@ -516,8 +537,8 @@ async function generateResponses(
     totalUsage.inputTokens += apiResponse.usage?.inputTokens || 0;
     totalUsage.outputTokens += apiResponse.usage?.outputTokens || 0;
 
-    // Validate result
-    lastValidation = validateResult(result, isRefine, responseType);
+    // Validate result - always single-type now
+    lastValidation = validateResult(result, true, responseType);
 
     if (lastValidation.valid) {
       break; // Success!
@@ -559,60 +580,41 @@ async function generateResponses(
     console.warn('Returning result with validation warning:', result._validationWarning);
   }
 
-  // Update conversation history
-  context.history.push({ role: 'user', content: userInput });
+  // Update tab-specific conversation history
+  tabContext.history.push({ role: 'user', content: userInput });
 
-  // Format assistant response with explicit numbering for both types
-  let formattedResponse = 'Generated responses:\n';
-  if (result.replies && result.replies.length > 0) {
-    formattedResponse += '\nReplies:\n';
-    result.replies.forEach((response, index) => {
-      formattedResponse += `#${index + 1} (${response.tone || 'standard'}):\n"${response.text}"\n`;
-    });
-  }
-  if (result.quotes && result.quotes.length > 0) {
-    formattedResponse += '\nQuotes:\n';
-    result.quotes.forEach((response, index) => {
-      formattedResponse += `#${index + 1} (${response.tone || 'standard'}):\n"${response.text}"\n`;
-    });
-  }
-  context.history.push({
+  // Get responses from result (may be in 'responses', 'replies', or 'quotes' depending on model)
+  const responses =
+    result.responses || (responseType === 'reply' ? result.replies : result.quotes) || [];
+
+  // Format assistant response with explicit numbering
+  let formattedResponse = `Generated ${responseType} responses:\n`;
+  responses.forEach((response, index) => {
+    formattedResponse += `#${index + 1} (${response.tone || 'standard'}):\n"${response.text}"\n`;
+  });
+  tabContext.history.push({
     role: 'assistant',
     content: formattedResponse,
   });
 
-  // Limit history to prevent token overflow
-  if (context.history.length > 10) {
-    context.history = context.history.slice(-10);
+  // Limit tab-specific history to prevent token overflow
+  if (tabContext.history.length > 10) {
+    tabContext.history = tabContext.history.slice(-10);
   }
 
-  // Update cached responses
-  if (isRefine) {
-    // Only update the refined type, preserve the other
-    if (responseType === 'reply') {
-      context.cachedResponses.replies = result.replies || result.responses || [];
-    } else {
-      context.cachedResponses.quotes = result.quotes || result.responses || [];
-    }
-    // Update analysis if provided
-    if (result.analysis) {
-      context.cachedResponses.analysis = result.analysis;
-    }
-  } else {
-    // Batch generation - update both
-    context.cachedResponses = {
-      analysis: result.analysis,
-      replies: result.replies || [],
-      quotes: result.quotes || [],
-    };
-  }
-  context.lastGeneratedAt = Date.now();
+  // Update tab-specific cache
+  tabContext.responses = responses;
+  tabContext.lastGeneratedAt = Date.now();
 
-  // Return both reply and quote arrays so content script can switch tabs instantly
+  // Update shared analysis if provided (only on first generation)
+  if (result.analysis && !context.analysis) {
+    context.analysis = result.analysis;
+  }
+
+  // Return responses for this tab type only
   return {
-    analysis: result.analysis,
-    replies: (result.replies || []).map((r) => ({ ...r, type: 'reply' })),
-    quotes: (result.quotes || []).map((r) => ({ ...r, type: 'quote' })),
+    analysis: context.analysis,
+    responses: responses.map((r) => ({ ...r, type: responseType })),
     _validationWarning: result._validationWarning,
   };
 }

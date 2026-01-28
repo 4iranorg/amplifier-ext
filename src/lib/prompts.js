@@ -104,54 +104,80 @@ export function sanitizeUserInput(input) {
 /**
  * Build the developer context (Layer 2: DEVELOPER)
  * Contains tweet data, selected arguments, CTAs, and exclusions
- * Requests 6 responses total: 3 replies + 3 quotes
- * @param {Object} postData - Tweet information
+ * Requests 3 responses of a single type (reply or quote)
+ * @param {Object} postData - Tweet information (new structure with nested author object)
  * @param {Array} selectedArgumentIds - Array of selected argument IDs
  * @param {Array} selectedCTAIds - Array of selected CTA IDs
  * @param {Object|null} profileContext - Cached profile info for the author
+ * @param {string} responseType - 'reply' or 'quote'
  * @returns {string} Developer context string
  */
 export function buildDeveloperContext(
   postData,
   selectedArgumentIds,
   selectedCTAIds,
-  profileContext = null
+  profileContext = null,
+  responseType = 'reply'
 ) {
   const parts = [];
 
-  // Task instruction for batch generation (6 responses: 3 reply + 3 quote)
+  // Task instruction for single-type generation (3 responses)
   parts.push('## TASK');
-  parts.push('Write exactly 6 X responses to the original post below:');
-  parts.push('- 3 REPLY responses (designed as direct replies to the author)');
-  parts.push(
-    '- 3 QUOTE responses (designed as quote reposts with commentary that can stand alone)'
-  );
+  parts.push(`Write exactly 3 X ${responseType} responses to the original post below.`);
+  if (responseType === 'reply') {
+    parts.push('These should be direct replies to the author.');
+  } else {
+    parts.push('These should be quote reposts with commentary that can stand alone.');
+  }
   parts.push('');
 
   // Original post section
   parts.push('## ORIGINAL POST');
 
-  // Author info with profile context
-  const handle = postData.authorHandle || postData.author || 'unknown';
+  // Extract author info (support both old and new structure)
+  const handle = postData.author?.handle || postData.authorHandle || postData.author || 'unknown';
+  const displayName = postData.author?.displayName || postData.author || handle;
+  const isVerified = postData.author?.isVerified || postData.isVerified || false;
   const displayHandle = handle.startsWith('@') ? handle : `@${handle}`;
+
+  // Author line with display name and handle
+  parts.push(`Author: ${displayName} (${displayHandle})`);
+
+  // Build metadata line
+  const metaParts = [];
   if (profileContext && profileContext.category && profileContext.category !== 'unknown') {
-    let authorLine = `Author handle: ${displayHandle}`;
-    authorLine += ` (${profileContext.category}`;
-    if (profileContext.followerCategory) {
-      authorLine += `, ${profileContext.followerCategory} followers`;
-    }
-    authorLine += ')';
-    parts.push(authorLine);
-  } else {
-    parts.push(`Author handle: ${displayHandle}`);
+    metaParts.push(`Category: ${profileContext.category}`);
+  }
+  if (profileContext && profileContext.followerCategory) {
+    metaParts.push(`Followers: ${profileContext.followerCategory}`);
+  }
+  metaParts.push(`Verified: ${isVerified ? 'yes' : 'no'}`);
+  parts.push(`- ${metaParts.join(' | ')}`);
+
+  // Media presence
+  if (postData.hasMedia !== undefined) {
+    parts.push(`- Contains media: ${postData.hasMedia ? 'yes' : 'no'}`);
   }
 
+  parts.push('');
   parts.push(`Text: ${postData.text || ''}`);
 
-  // Quoted/thread context
+  // Quoted/thread context with enhanced info
   if (postData.quotedPost || postData.quotedTweet) {
     const quoted = postData.quotedPost || postData.quotedTweet;
-    parts.push(`Quoted/thread context: ${quoted.author || 'unknown'}: "${quoted.text || ''}"`);
+    parts.push('');
+    parts.push('## QUOTED POST');
+
+    // Extract quoted author info (support both old and new structure)
+    const quotedHandle = quoted.author?.handle || quoted.authorHandle || quoted.author || 'unknown';
+    const quotedDisplayName = quoted.author?.displayName || quoted.author || quotedHandle;
+    const quotedIsVerified = quoted.author?.isVerified || false;
+    const quotedDisplayHandle = quotedHandle.startsWith('@') ? quotedHandle : `@${quotedHandle}`;
+
+    parts.push(`Author: ${quotedDisplayName} (${quotedDisplayHandle})`);
+    parts.push(`- Verified: ${quotedIsVerified ? 'yes' : 'no'}`);
+    parts.push('');
+    parts.push(`Text: ${quoted.text || ''}`);
   }
   parts.push('');
 
@@ -220,7 +246,7 @@ export function buildDeveloperContext(
 /**
  * Build the developer context for refinement (Layer 2: DEVELOPER)
  * Used when user provides feedback - only regenerates 3 responses of the specified type
- * @param {Object} postData - Tweet information
+ * @param {Object} postData - Tweet information (new structure with nested author object)
  * @param {Array} selectedArgumentIds - Array of selected argument IDs
  * @param {Array} selectedCTAIds - Array of selected CTA IDs
  * @param {Object|null} profileContext - Cached profile info for the author
@@ -249,27 +275,50 @@ export function buildDeveloperContextForRefine(
   // Original post section
   parts.push('## ORIGINAL POST');
 
-  // Author info with profile context
-  const handle = postData.authorHandle || postData.author || 'unknown';
+  // Extract author info (support both old and new structure)
+  const handle = postData.author?.handle || postData.authorHandle || postData.author || 'unknown';
+  const displayName = postData.author?.displayName || postData.author || handle;
+  const isVerified = postData.author?.isVerified || postData.isVerified || false;
   const displayHandle = handle.startsWith('@') ? handle : `@${handle}`;
+
+  // Author line with display name and handle
+  parts.push(`Author: ${displayName} (${displayHandle})`);
+
+  // Build metadata line
+  const metaParts = [];
   if (profileContext && profileContext.category && profileContext.category !== 'unknown') {
-    let authorLine = `Author handle: ${displayHandle}`;
-    authorLine += ` (${profileContext.category}`;
-    if (profileContext.followerCategory) {
-      authorLine += `, ${profileContext.followerCategory} followers`;
-    }
-    authorLine += ')';
-    parts.push(authorLine);
-  } else {
-    parts.push(`Author handle: ${displayHandle}`);
+    metaParts.push(`Category: ${profileContext.category}`);
+  }
+  if (profileContext && profileContext.followerCategory) {
+    metaParts.push(`Followers: ${profileContext.followerCategory}`);
+  }
+  metaParts.push(`Verified: ${isVerified ? 'yes' : 'no'}`);
+  parts.push(`- ${metaParts.join(' | ')}`);
+
+  // Media presence
+  if (postData.hasMedia !== undefined) {
+    parts.push(`- Contains media: ${postData.hasMedia ? 'yes' : 'no'}`);
   }
 
+  parts.push('');
   parts.push(`Text: ${postData.text || ''}`);
 
-  // Quoted/thread context
+  // Quoted/thread context with enhanced info
   if (postData.quotedPost || postData.quotedTweet) {
     const quoted = postData.quotedPost || postData.quotedTweet;
-    parts.push(`Quoted/thread context: ${quoted.author || 'unknown'}: "${quoted.text || ''}"`);
+    parts.push('');
+    parts.push('## QUOTED POST');
+
+    // Extract quoted author info (support both old and new structure)
+    const quotedHandle = quoted.author?.handle || quoted.authorHandle || quoted.author || 'unknown';
+    const quotedDisplayName = quoted.author?.displayName || quoted.author || quotedHandle;
+    const quotedIsVerified = quoted.author?.isVerified || false;
+    const quotedDisplayHandle = quotedHandle.startsWith('@') ? quotedHandle : `@${quotedHandle}`;
+
+    parts.push(`Author: ${quotedDisplayName} (${quotedDisplayHandle})`);
+    parts.push(`- Verified: ${quotedIsVerified ? 'yes' : 'no'}`);
+    parts.push('');
+    parts.push(`Text: ${quoted.text || ''}`);
   }
   parts.push('');
 
