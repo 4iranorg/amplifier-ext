@@ -198,8 +198,8 @@ export const CONFIG_DEFAULTS = {
 
   models: {
     openai: [
-      { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini' },
-      { id: 'gpt-4.1', name: 'GPT-4.1 (Recommended)', default: true },
+      { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini (Recommended)', default: true },
+      { id: 'gpt-4.1', name: 'GPT-4.1' },
       { id: 'gpt-5-mini', name: 'GPT-5 Mini' },
       { id: 'gpt-5', name: 'GPT-5 Standard' },
       { id: 'gpt-5.2', name: 'GPT-5.2 (Advanced)' },

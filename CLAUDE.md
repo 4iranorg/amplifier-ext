@@ -105,7 +105,7 @@ amplifier/
 | `src/background/service-worker.js` | Central hub - handles API calls, manages context, tracks usage, handles onboarding |
 | `src/lib/prompts.js`               | Prompt architecture with arguments/CTAs injection                                  |
 | `src/lib/config-loader.js`         | Remote config, arguments & CTAs data, selection storage                            |
-| `src/lib/api.js`                   | API wrappers with token usage tracking, prompt validation                          |
+| `src/lib/api.js`                   | API wrappers with token usage tracking (incl. cached tokens), prompt validation    |
 | `src/lib/cost-tracker.js`          | Tracks API usage (tokens/cost) separately from amplifications                      |
 | `src/dashboard/dashboard.js`       | Activity graph, arguments/CTAs management, advanced settings                       |
 | `src/onboarding/onboarding.js`     | First-run wizard with privacy, arguments, CTAs, API setup                          |
@@ -233,7 +233,7 @@ Message types:
 
 1. **Usage Stats** (`usageStats`) - Tracks API consumption
    - **When recorded**: Every LLM API call (generation, refinement, validation)
-   - **What's tracked**: Tokens (input + output), estimated cost, request count
+   - **What's tracked**: Tokens (input + output + cached), estimated cost, request count
    - **Purpose**: Shows users their API spending
    - **Function**: `recordUsage()` in `cost-tracker.js`
 
@@ -354,7 +354,25 @@ The workflow automatically:
 
 **Conversation context**: Stored in-memory per tweet ID. Includes conversation history for refinement and cached batch responses (3 replies + 3 quotes generated in one API call). If user closes and reopens the panel for the same tweet, cached responses are shown instantly without an API call. Tab switching between Reply/Quote uses cached data without additional API calls. Cleared on page refresh or extension reload.
 
-**API calls**: Made directly from service worker to OpenAI/Anthropic. Token usage extracted from responses.
+**API calls**: Made directly from service worker to OpenAI/Anthropic. Token usage (including cached tokens) extracted from responses. Default model is `gpt-4.1-mini` for speed.
+
+**Response panel analytics**: Shows generation stats centered below responses: `In: 3.0k | Out: 308 | Cached: 1.0k | Time: 5.9s`. Cached tokens only shown if > 0.
+
+**Validation**: Basic validation checks response length (≤280 chars), required hashtag, and hashtag count. No automatic retries (`MAX_VALIDATION_RETRIES = 0`) - accepts first response for speed.
+
+**Twitter/X Web Intents** ([docs](https://developer.x.com/en/docs/x-for-websites/tweet-button/guides/web-intent)):
+
+- **Reply button**: Uses `in_reply_to` parameter with tweet ID
+
+  ```
+  https://twitter.com/intent/tweet?in_reply_to={tweetId}&text={responseText}
+  ```
+
+- **Quote button**: Appends tweet URL to text (Twitter renders as quote embed)
+
+  ```
+  https://twitter.com/intent/tweet?text={responseText} {tweetUrl}
+  ```
 
 **Profile caching**: Profiles cached with 7-day TTL. Auto-detects category (journalist, activist, etc.).
 
@@ -479,9 +497,9 @@ Note: `prompts.fixed` should NOT be modified - it contains mission guardrails.
 
 - Update banner
 - Usage statistics (today/month)
-- Voice preferences (4 dropdowns)
-- API configuration
+- API configuration (provider, model, API key)
 - Link to Dashboard
+- Auto-closes after saving settings
 
 ### Dashboard (Full Settings)
 

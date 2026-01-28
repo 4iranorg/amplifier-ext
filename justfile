@@ -10,13 +10,25 @@ install:
     pnpm install
     pre-commit install
 
-# Build CSS from SCSS
-build:
+# Build CSS from SCSS (for development with unbundled source)
+build-css:
     pnpm run build:css
+
+# Build bundled extension to dist/
+build:
+    pnpm run build
+
+# Build bundled extension with sourcemaps for debugging
+build-dev:
+    pnpm run build:dev
 
 # Watch SCSS for changes and rebuild
 watch:
     pnpm run watch:css
+
+# Watch and rebuild bundled JS (for development)
+watch-js:
+    pnpm run build:watch
 
 # Run all linters (eslint + stylelint)
 lint:
@@ -56,6 +68,7 @@ clean:
     rm -f src/dashboard/dashboard.css
     rm -f src/onboarding/onboarding.css
     rm -f docs/landing.css
+    rm -rf dist/
 
 # Rebuild from scratch
 rebuild: clean build

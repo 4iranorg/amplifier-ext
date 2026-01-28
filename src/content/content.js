@@ -101,6 +101,7 @@ let panelContainer = null;
 let currentTweetData = null;
 let currentResponseType = 'reply';
 let onboardingModal = null;
+let generationStartTime = null;
 
 // Separate cached results per tab (on-demand generation)
 let cachedReplyResult = null;
@@ -896,12 +897,13 @@ function createResponseCard(response, index, responseType) {
     quoteBtn.appendChild(createIcon('quote', '14px'));
     quoteBtn.appendChild(document.createTextNode('Quote'));
 
-    // Quote button - opens Twitter quote intent with the original tweet URL in text
-    // Twitter detects the tweet URL and converts it to a quote embed
+    // Quote button - opens Twitter intent with tweet URL in text (creates quote embed)
     quoteBtn.addEventListener('click', () => {
       const tweetUrl = currentTweetData?.url;
       if (tweetUrl) {
-        const quoteIntentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(response.text)}&url=${encodeURIComponent(tweetUrl)}`;
+        // Include tweet URL in text - Twitter recognizes it and creates a quote embed
+        const textWithUrl = `${response.text} ${tweetUrl}`;
+        const quoteIntentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(textWithUrl)}`;
         window.open(quoteIntentUrl, 'amplifier-intent', 'width=620,height=720,noopener,noreferrer');
         // Record amplification
         browser.runtime.sendMessage({ type: 'recordAmplification', action: 'quote' });
@@ -937,8 +939,9 @@ function createResponseCard(response, index, responseType) {
  * Display responses for a specific tab
  * @param {Object} result - The result with analysis and responses
  * @param {string} responseType - 'reply' or 'quote'
+ * @param {number|null} elapsedMs - Time taken to generate responses in milliseconds
  */
-function displayResponsesForTab(result, responseType) {
+function displayResponsesForTab(result, responseType, elapsedMs = null) {
   // Get the appropriate container for this tab
   const container = panelContainer.querySelector(
     responseType === 'reply' ? '.iap-replies-container' : '.iap-quotes-container'
@@ -964,6 +967,43 @@ function displayResponsesForTab(result, responseType) {
       }),
     ]);
     container.appendChild(analysisEl);
+  }
+
+  // Show timing and token usage if available
+  if (elapsedMs || result.usage) {
+    const formatTokens = (n) => {
+      if (n >= 1000000) {
+        return (n / 1000000).toFixed(1) + 'M';
+      }
+      if (n >= 1000) {
+        return (n / 1000).toFixed(1) + 'k';
+      }
+      return String(n);
+    };
+
+    const parts = [];
+    if (result.usage) {
+      const inTokens = result.usage.inputTokens || 0;
+      const outTokens = result.usage.outputTokens || 0;
+      const cachedTokens = result.usage.cachedTokens || 0;
+      parts.push(`In: ${formatTokens(inTokens)}`);
+      parts.push(`Out: ${formatTokens(outTokens)}`);
+      if (cachedTokens > 0) {
+        parts.push(`Cached: ${formatTokens(cachedTokens)}`);
+      }
+    }
+    if (elapsedMs) {
+      const seconds = (elapsedMs / 1000).toFixed(1);
+      parts.push(`Time: ${seconds}s`);
+    }
+    if (result.retryCount > 0) {
+      parts.push(`Retries: ${result.retryCount}`);
+    }
+    const timingEl = createElement('div', {
+      className: 'iap-timing',
+      textContent: parts.join(' | '),
+    });
+    container.appendChild(timingEl);
   }
 
   // Get responses (new format: result.responses)
@@ -993,8 +1033,9 @@ function displayResponsesForTab(result, responseType) {
 /**
  * Display responses in panel
  * @param {Object} result - API result with analysis and responses
+ * @param {number|null} elapsedMs - Time taken to generate responses in milliseconds
  */
-function displayResponses(result) {
+function displayResponses(result, elapsedMs = null) {
   // Cache the result for this specific tab
   if (currentResponseType === 'reply') {
     cachedReplyResult = result;
@@ -1003,7 +1044,7 @@ function displayResponses(result) {
   }
 
   // Display using the tab-specific function
-  displayResponsesForTab(result, currentResponseType);
+  displayResponsesForTab(result, currentResponseType, elapsedMs);
 }
 
 /**
@@ -1016,6 +1057,7 @@ async function generateAndDisplay(feedback = null, forceRegenerate = false) {
     return;
   }
 
+  generationStartTime = Date.now();
   showLoading();
 
   try {
@@ -1030,7 +1072,8 @@ async function generateAndDisplay(feedback = null, forceRegenerate = false) {
     hideLoading();
 
     if (response.success) {
-      displayResponses(response.data);
+      const elapsedMs = Date.now() - generationStartTime;
+      displayResponses(response.data, elapsedMs);
     } else {
       showError(response.error || 'Generation failed');
     }

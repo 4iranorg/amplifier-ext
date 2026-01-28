@@ -30,8 +30,11 @@ export function getModelPricingData() {
 export function calculateCost(model, inputTokens, outputTokens) {
   const pricing = getModelPricing(model);
   if (!pricing) {
-    // Default to gpt-4o-mini pricing if unknown
-    return calculateCost('gpt-4o-mini', inputTokens, outputTokens);
+    // Default to gpt-5-mini pricing if unknown (avoid recursion)
+    const fallbackPricing = { input: 0.25, output: 2.0 };
+    const inputCost = (inputTokens / 1000000) * fallbackPricing.input;
+    const outputCost = (outputTokens / 1000000) * fallbackPricing.output;
+    return inputCost + outputCost;
   }
 
   const inputCost = (inputTokens / 1000000) * pricing.input;

@@ -4,7 +4,11 @@
   "type": "module",
   "description": "Build tools for Iran Amplifier browser extension",
   "scripts": {
+    "build": "node scripts/build.js && pnpm run build:css:dist",
+    "build:dev": "node scripts/build.js --dev && pnpm run build:css:dist",
+    "build:watch": "node scripts/build.js --watch --dev",
     "build:css": "sass --no-source-map --style=expanded src/styles/content/content.scss:src/content/content.css src/styles/popup/popup.scss:src/popup/popup.css src/styles/dashboard/dashboard.scss:src/dashboard/dashboard.css src/styles/onboarding/onboarding.scss:src/onboarding/onboarding.css src/styles/landing/landing.scss:docs/landing.css",
+    "build:css:dist": "sass --no-source-map --style=compressed src/styles/content/content.scss:dist/src/content/content.css src/styles/popup/popup.scss:dist/src/popup/popup.css src/styles/dashboard/dashboard.scss:dist/src/dashboard/dashboard.css src/styles/onboarding/onboarding.scss:dist/src/onboarding/onboarding.css",
     "watch:css": "sass --no-source-map --watch --style=expanded src/styles/content/content.scss:src/content/content.css src/styles/popup/popup.scss:src/popup/popup.css src/styles/dashboard/dashboard.scss:src/dashboard/dashboard.css src/styles/onboarding/onboarding.scss:src/onboarding/onboarding.css src/styles/landing/landing.scss:docs/landing.css",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
@@ -14,11 +18,15 @@
     "format:check": "prettier --check 'src/**/*.{js,json,html,css,scss}' '*.{json,md}'"
   },
   "devDependencies": {
+    "esbuild": "^0.27.2",
     "eslint": "^9.39.2",
     "globals": "^17.2.0",
     "prettier": "^3.8.1",
     "sass": "^1.97.3",
     "stylelint": "^17.0.0",
     "stylelint-config-standard-scss": "^17.0.0"
+  },
+  "dependencies": {
+    "openai": "^6.16.0"
   }
 }

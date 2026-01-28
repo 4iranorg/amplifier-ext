@@ -37,7 +37,6 @@ import {
   saveSelectedArguments,
   saveSelectedCTAs,
   getExclusions,
-  getRefusalMessages,
 } from '../lib/config-loader.js';
 import {
   initializeUserSeed,
@@ -50,26 +49,11 @@ import {
 // In-memory conversation contexts (cleared on extension restart)
 const tweetContexts = new Map();
 
-// Maximum retries for auto-regeneration
-const MAX_VALIDATION_RETRIES = 2;
+// Maximum retries for auto-regeneration (0 = no retries, accept first response)
+const MAX_VALIDATION_RETRIES = 0;
 
 // Required hashtag
 const REQUIRED_HASHTAG = '#IranRevolution2026';
-
-// Excluded source patterns (from exclusions)
-const EXCLUDED_PATTERNS = [/\bNIAC\b/i, /\bNegar\s*Mortazavi\b/i, /\bTrita\s*Parsi\b/i];
-
-// Threat/incitement keywords to reject (specific patterns to avoid false positives)
-// Note: Patterns like "violence against" are too broad - they match "regime's violence against protesters"
-const THREAT_PATTERNS = [
-  /\bkill\s+(them|him|her|all|everyone)\b/i,
-  /\bdeath\s+to\b/i,
-  /\b(use|commit|advocate|promote)\s+violence\b/i,
-  /\battack\s+(them|civilians|innocents)\b/i,
-  /\blet'?s\s+bomb\b/i,
-  /\bassassinate\b/i,
-  /\bexterminate\b/i,
-];
 
 /**
  * Validate a single response text
@@ -93,22 +77,6 @@ function validateResponseText(text) {
   const hashtagCount = (text.match(/#\w+/g) || []).length;
   if (hashtagCount > 2) {
     issues.push('too_many_hashtags');
-  }
-
-  // Check for excluded sources
-  for (const pattern of EXCLUDED_PATTERNS) {
-    if (pattern.test(text)) {
-      issues.push('excluded_source');
-      break;
-    }
-  }
-
-  // Check for threats/incitement
-  for (const pattern of THREAT_PATTERNS) {
-    if (pattern.test(text)) {
-      issues.push('threat_detected');
-      break;
-    }
   }
 
   return {
@@ -139,17 +107,16 @@ function areResponsesTooSimilar(responses) {
  * Validate a response array (replies or quotes)
  * @param {Array} responses - Array of response objects
  * @param {string} type - 'replies' or 'quotes' for error messages
- * @returns {Object} { issues: string[], hasTooLong, hasMissingHashtag, hasRefusal }
+ * @returns {Object} { issues: string[], hasTooLong, hasMissingHashtag }
  */
 function validateResponseArray(responses, type) {
   const issues = [];
   let hasTooLong = false;
   let hasMissingHashtag = false;
-  let hasRefusal = false;
 
   if (!responses || !Array.isArray(responses)) {
     issues.push(`no_${type}`);
-    return { issues, hasTooLong, hasMissingHashtag, hasRefusal };
+    return { issues, hasTooLong, hasMissingHashtag };
   }
 
   if (responses.length === 0 || responses.length > 3) {
@@ -172,13 +139,10 @@ function validateResponseArray(responses, type) {
       if (validation.issues.includes('missing_hashtag')) {
         hasMissingHashtag = true;
       }
-      if (validation.issues.includes('threat_detected')) {
-        hasRefusal = true;
-      }
     }
   }
 
-  return { issues, hasTooLong, hasMissingHashtag, hasRefusal };
+  return { issues, hasTooLong, hasMissingHashtag };
 }
 
 /**
@@ -210,14 +174,6 @@ function validateResult(result, isRefine = false, refineType = null) {
     issues.push(...typeValidation.issues);
     hasTooLong = typeValidation.hasTooLong;
     hasMissingHashtag = typeValidation.hasMissingHashtag;
-    if (typeValidation.hasRefusal) {
-      return {
-        valid: false,
-        issues: ['threat_detected'],
-        fixHints: [],
-        refusal: true,
-      };
-    }
     // Check similarity for single-type responses
     if (responses && responses.length > 1 && areResponsesTooSimilar(responses)) {
       issues.push(`${refineType}s_too_similar`);
@@ -231,15 +187,6 @@ function validateResult(result, isRefine = false, refineType = null) {
     issues.push(...repliesValidation.issues, ...quotesValidation.issues);
     hasTooLong = repliesValidation.hasTooLong || quotesValidation.hasTooLong;
     hasMissingHashtag = repliesValidation.hasMissingHashtag || quotesValidation.hasMissingHashtag;
-
-    if (repliesValidation.hasRefusal || quotesValidation.hasRefusal) {
-      return {
-        valid: false,
-        issues: ['threat_detected'],
-        fixHints: [],
-        refusal: true,
-      };
-    }
 
     // Check similarity within each type
     if (result.replies && result.replies.length > 1 && areResponsesTooSimilar(result.replies)) {
@@ -281,7 +228,7 @@ async function getSettings() {
   return {
     apiKey: result.apiKey || '',
     provider: result.provider || 'openai',
-    model: result.model || 'gpt-4o-mini',
+    model: result.model || 'gpt-4.1-mini',
     customUserPrompt: result.customUserPrompt || null, // null means use default
   };
 }
@@ -514,7 +461,7 @@ async function generateResponses(
 
   // Call API with validation and auto-regeneration loop
   let result = null;
-  let totalUsage = { inputTokens: 0, outputTokens: 0 };
+  let totalUsage = { inputTokens: 0, outputTokens: 0, cachedTokens: 0 };
   let retryCount = 0;
   let lastValidation = null;
 
@@ -548,31 +495,13 @@ async function generateResponses(
     result = apiResponse.result;
     totalUsage.inputTokens += apiResponse.usage?.inputTokens || 0;
     totalUsage.outputTokens += apiResponse.usage?.outputTokens || 0;
+    totalUsage.cachedTokens += apiResponse.usage?.cachedTokens || 0;
 
     // Validate result - always single-type now
     lastValidation = validateResult(result, true, responseType);
 
     if (lastValidation.valid) {
       break; // Success!
-    }
-
-    // Check for refusal (threat detected)
-    if (lastValidation.refusal) {
-      const refusalMessages = getRefusalMessages();
-      const refusalResponse = {
-        text: refusalMessages.violence,
-        tone: 'refusal',
-      };
-      result = {
-        analysis: {
-          post_sentiment: 'unknown',
-          key_topics: [],
-          recommended_approach: 'Request refused due to policy violation.',
-        },
-        replies: [refusalResponse],
-        quotes: [refusalResponse],
-      };
-      break;
     }
 
     console.warn(`Validation failed (attempt ${retryCount + 1}):`, lastValidation.issues);
@@ -587,7 +516,7 @@ async function generateResponses(
   }
 
   // Add warning if validation still failed after retries
-  if (lastValidation && !lastValidation.valid && !lastValidation.refusal) {
+  if (lastValidation && !lastValidation.valid) {
     result._validationWarning = `Some responses may not meet all requirements: ${lastValidation.issues.join(', ')}`;
     console.warn('Returning result with validation warning:', result._validationWarning);
   }
@@ -631,6 +560,8 @@ async function generateResponses(
     analysis: context.analysis,
     responses: responses.map((r) => ({ ...r, type: responseType })),
     _validationWarning: result._validationWarning,
+    usage: totalUsage,
+    retryCount,
   };
 }
 

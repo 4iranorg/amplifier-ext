@@ -1,32 +1,100 @@
 /**
  * OpenAI API wrapper for Iran Amplifier extension.
- * Makes direct calls to OpenAI API - no intermediary server.
+ * Uses official OpenAI SDK for Responses API, direct fetch for Chat Completions.
  */
 
+import OpenAI from 'openai';
 import { getAllModels, CONFIG_DEFAULTS } from './config-loader.js';
 
 /**
- * Call OpenAI API with conversation context
+ * Call OpenAI Responses API (for GPT-5+ models) using official SDK
  * @param {string} apiKey - User's OpenAI API key
- * @param {string} model - Model to use (e.g., 'gpt-4o-mini')
+ * @param {string} model - Model to use (e.g., 'gpt-5-mini')
  * @param {Array} messages - Conversation messages
  * @returns {Promise<Object>} Object with result and usage data
  */
-export async function callOpenAI(apiKey, model, messages) {
+async function callOpenAIResponses(apiKey, model, messages) {
+  const client = new OpenAI({
+    apiKey: apiKey,
+    dangerouslyAllowBrowser: true, // Required for browser extension
+  });
+
+  // Extract system message for instructions
+  const systemMessage = messages.find((m) => m.role === 'system');
+  const nonSystemMessages = messages.filter((m) => m.role !== 'system');
+
+  // Instructions must contain "json" for json_object mode
+  let instructions = systemMessage?.content || '';
+  if (!instructions.toLowerCase().includes('json')) {
+    instructions += '\n\nRespond with valid JSON.';
+  }
+
+  // Build input - ensure "json" appears in input for json_object mode
+  let input;
+  if (nonSystemMessages.length === 1 && nonSystemMessages[0].role === 'user') {
+    let content = nonSystemMessages[0].content;
+    // API requires "json" in input for json_object mode
+    if (!content.toLowerCase().includes('json')) {
+      content += '\n\nRespond with valid JSON.';
+    }
+    input = content;
+  } else {
+    // For multi-turn, add json instruction to last user message
+    input = nonSystemMessages.map((m, i) => {
+      let content = m.content;
+      if (m.role === 'user' && i === nonSystemMessages.length - 1) {
+        if (!content.toLowerCase().includes('json')) {
+          content += '\n\nRespond with valid JSON.';
+        }
+      }
+      return { role: m.role, content: content };
+    });
+  }
+
+  const response = await client.responses.create({
+    model: model,
+    instructions: instructions,
+    input: input,
+    text: { format: { type: 'json_object' } },
+  });
+
+  // Extract token usage (including cached tokens if available)
+  const usage = {
+    inputTokens: response.usage?.input_tokens || 0,
+    outputTokens: response.usage?.output_tokens || 0,
+    cachedTokens: response.usage?.input_tokens_details?.cached_tokens || 0,
+    model: model,
+    provider: 'openai',
+  };
+
+  try {
+    return {
+      result: JSON.parse(response.output_text),
+      usage,
+    };
+  } catch (_e) {
+    throw new Error('Failed to parse API response as JSON');
+  }
+}
+
+/**
+ * Call OpenAI Chat Completions API (for GPT-4.x and older models)
+ * @param {string} apiKey - User's OpenAI API key
+ * @param {string} model - Model to use (e.g., 'gpt-4.1-mini')
+ * @param {Array} messages - Conversation messages
+ * @returns {Promise<Object>} Object with result and usage data
+ */
+async function callOpenAIChatCompletions(apiKey, model, messages) {
   // Newer OpenAI models use max_completion_tokens instead of max_tokens
   const useNewTokenParam =
     model.startsWith('gpt-4.1') ||
-    model.startsWith('gpt-5') ||
     model.startsWith('o1') ||
     model.startsWith('o3') ||
     model.startsWith('o4');
 
-  // GPT-5 and reasoning models don't support custom temperature
+  // Reasoning models don't support custom temperature
   const supportsTemperature =
-    !model.startsWith('gpt-5') &&
-    !model.startsWith('o1') &&
-    !model.startsWith('o3') &&
-    !model.startsWith('o4');
+    !model.startsWith('o1') && !model.startsWith('o3') && !model.startsWith('o4');
 
   const requestBody = {
     model: model,
@@ -61,10 +129,11 @@ export async function callOpenAI(apiKey, model, messages) {
   const data = await response.json();
   const content = data.choices[0].message.content;
 
-  // Extract token usage
+  // Extract token usage (including cached tokens if available)
   const usage = {
     inputTokens: data.usage?.prompt_tokens || 0,
     outputTokens: data.usage?.completion_tokens || 0,
+    cachedTokens: data.usage?.prompt_tokens_details?.cached_tokens || 0,
     model: model,
     provider: 'openai',
   };
@@ -77,6 +146,24 @@ export async function callOpenAI(apiKey, model, messages) {
   } catch (_e) {
     throw new Error('Failed to parse API response as JSON');
   }
+}
+
+/**
+ * Call OpenAI API with conversation context
+ * Routes to Responses API for GPT-5+ models, Chat Completions for GPT-4.x
+ * @param {string} apiKey - User's OpenAI API key
+ * @param {string} model - Model to use (e.g., 'gpt-5-mini')
+ * @param {Array} messages - Conversation messages
+ * @returns {Promise<Object>} Object with result and usage data
+ */
+export async function callOpenAI(apiKey, model, messages) {
+  // GPT-5+ models use Responses API
+  if (model.startsWith('gpt-5')) {
+    return callOpenAIResponses(apiKey, model, messages);
+  }
+
+  // GPT-4.x and older models use Chat Completions API
+  return callOpenAIChatCompletions(apiKey, model, messages);
 }
 
 /**
@@ -121,10 +208,11 @@ export async function callAnthropic(apiKey, model, systemPrompt, messages) {
   const data = await response.json();
   const content = data.content[0].text;
 
-  // Extract token usage
+  // Extract token usage (including cached tokens if available)
   const usage = {
     inputTokens: data.usage?.input_tokens || 0,
     outputTokens: data.usage?.output_tokens || 0,
+    cachedTokens: data.usage?.cache_read_input_tokens || 0,
     model: model,
     provider: 'anthropic',
   };
@@ -218,7 +306,7 @@ Is this prompt safe to use? Return JSON.`;
     let result;
 
     if (provider === 'openai') {
-      // Use a fast, cheap model for validation
+      // Use a fast, cheap model for validation (gpt-4.1-mini uses Chat Completions)
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -226,14 +314,14 @@ Is this prompt safe to use? Return JSON.`;
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'gpt-4.1-mini',
           messages: [
             { role: 'system', content: validationSystemPrompt },
             { role: 'user', content: userMessage },
           ],
           response_format: { type: 'json_object' },
           temperature: 0.1,
-          max_tokens: 150,
+          max_completion_tokens: 150,
         }),
       });
 

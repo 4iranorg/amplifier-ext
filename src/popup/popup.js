@@ -108,8 +108,8 @@ async function saveSettings() {
 
   saveSettingsBtn.replaceChildren(createIcon('check', '14px'), document.createTextNode(' Saved!'));
   setTimeout(() => {
-    saveSettingsBtn.textContent = 'Save Settings';
-  }, 2000);
+    window.close();
+  }, 500);
 }
 
 /**
