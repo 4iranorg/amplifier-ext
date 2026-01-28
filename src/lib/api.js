@@ -13,19 +13,44 @@ import { getAllModels, CONFIG_DEFAULTS } from './config-loader.js';
  * @returns {Promise<Object>} Object with result and usage data
  */
 export async function callOpenAI(apiKey, model, messages) {
+  // Newer OpenAI models use max_completion_tokens instead of max_tokens
+  const useNewTokenParam =
+    model.startsWith('gpt-4.1') ||
+    model.startsWith('gpt-5') ||
+    model.startsWith('o1') ||
+    model.startsWith('o3') ||
+    model.startsWith('o4');
+
+  // GPT-5 and reasoning models don't support custom temperature
+  const supportsTemperature =
+    !model.startsWith('gpt-5') &&
+    !model.startsWith('o1') &&
+    !model.startsWith('o3') &&
+    !model.startsWith('o4');
+
+  const requestBody = {
+    model: model,
+    messages: messages,
+    response_format: { type: 'json_object' },
+  };
+
+  if (supportsTemperature) {
+    requestBody.temperature = 0.8;
+  }
+
+  if (useNewTokenParam) {
+    requestBody.max_completion_tokens = 1000;
+  } else {
+    requestBody.max_tokens = 1000;
+  }
+
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model: model,
-      messages: messages,
-      response_format: { type: 'json_object' },
-      temperature: 0.8,
-      max_tokens: 1000,
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {

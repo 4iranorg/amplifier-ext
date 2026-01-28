@@ -4,7 +4,7 @@
  */
 
 // Cache TTL in milliseconds (7 days)
-const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+export const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * Follower count categories
@@ -145,6 +145,37 @@ export async function cacheProfile(profile) {
 }
 
 /**
+ * Clean up expired profiles from cache
+ * Should be called on extension startup
+ * @returns {Promise<number>} Number of profiles removed
+ */
+export async function cleanupExpiredProfiles() {
+  try {
+    const result = await browser.storage.local.get(['profileCache']);
+    const cache = result.profileCache || {};
+    const now = Date.now();
+    let removedCount = 0;
+
+    for (const handle of Object.keys(cache)) {
+      if (now - cache[handle].cachedAt > CACHE_TTL) {
+        delete cache[handle];
+        removedCount++;
+      }
+    }
+
+    if (removedCount > 0) {
+      await browser.storage.local.set({ profileCache: cache });
+      console.log(`[Amplifier] Cleaned up ${removedCount} expired profile(s)`);
+    }
+
+    return removedCount;
+  } catch (error) {
+    console.error('Error cleaning up expired profiles:', error);
+    return 0;
+  }
+}
+
+/**
  * Detect user category from bio text
  * @param {string} bio - User bio text
  * @param {string} displayName - Display name
@@ -152,6 +183,11 @@ export async function cacheProfile(profile) {
  */
 export function detectCategory(bio, displayName = '') {
   const text = `${bio} ${displayName}`.toLowerCase();
+
+  // Regime official detection (check first - highest priority)
+  if (text.includes('islamic republic')) {
+    return 'regime_official';
+  }
 
   // Journalist keywords
   const journalistKeywords = [

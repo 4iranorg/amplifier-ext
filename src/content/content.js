@@ -101,7 +101,10 @@ let panelContainer = null;
 let currentTweetData = null;
 let currentResponseType = 'reply';
 let onboardingModal = null;
-let cachedBatchResult = null; // Cache for both reply and quote responses
+
+// Separate cached results per tab (on-demand generation)
+let cachedReplyResult = null;
+let cachedQuoteResult = null;
 
 // Personalization options (must match lib/personalization.js)
 const VOICE_STYLES = [
@@ -135,12 +138,148 @@ const LENGTHS = [
 ];
 
 /**
+ * Wait for an element to appear in the DOM
+ * @param {string} selector - CSS selector
+ * @param {number} timeout - Timeout in milliseconds
+ * @param {Element} parent - Parent element to search within (defaults to document)
+ * @returns {Promise<Element|null>} Element or null if timeout
+ */
+function waitForElement(selector, timeout = 2000, parent = document) {
+  return new Promise((resolve) => {
+    const existing = parent.querySelector(selector);
+    if (existing) {
+      resolve(existing);
+      return;
+    }
+
+    const observer = new MutationObserver(() => {
+      const el = parent.querySelector(selector);
+      if (el) {
+        observer.disconnect();
+        resolve(el);
+      }
+    });
+
+    observer.observe(parent, { childList: true, subtree: true });
+
+    setTimeout(() => {
+      observer.disconnect();
+      resolve(null);
+    }, timeout);
+  });
+}
+
+/**
+ * Extract author bio by triggering X's hover card
+ * @param {Element} tweetElement - The tweet article element
+ * @returns {Promise<string>} Bio text or empty string
+ */
+async function _extractAuthorBio(tweetElement) {
+  try {
+    // Find the profile link (avatar or username)
+    const profileLink = tweetElement.querySelector(
+      '[data-testid="User-Name"] a[href^="/"], [data-testid="Tweet-User-Avatar"] a[href^="/"]'
+    );
+    if (!profileLink) {
+      console.log('[Amplifier] Bio extraction: No profile link found');
+      return '';
+    }
+
+    const handle = profileLink.getAttribute('href')?.slice(1) || 'unknown';
+    console.log(`[Amplifier] Attempting bio extraction for @${handle}...`);
+
+    // Try multiple event types to trigger hover card
+    const rect = profileLink.getBoundingClientRect();
+    const eventOptions = {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + rect.height / 2,
+    };
+
+    // Try pointerenter first (X likely uses pointer events)
+    profileLink.dispatchEvent(new PointerEvent('pointerenter', eventOptions));
+    profileLink.dispatchEvent(new MouseEvent('mouseenter', eventOptions));
+    profileLink.dispatchEvent(new MouseEvent('mouseover', eventOptions));
+
+    // Wait for hover card to appear
+    const hoverCard = await waitForElement('[data-testid="HoverCard"]', 2000);
+    if (!hoverCard) {
+      console.log(`[Amplifier] Bio extraction: Hover card did not appear for @${handle}`);
+      profileLink.dispatchEvent(new PointerEvent('pointerleave', eventOptions));
+      profileLink.dispatchEvent(new MouseEvent('mouseleave', eventOptions));
+      return '';
+    }
+
+    console.log(`[Amplifier] Hover card appeared for @${handle}`);
+
+    // Debug: log hover card structure
+    console.log(
+      '[Amplifier] Hover card testids:',
+      [...hoverCard.querySelectorAll('[data-testid]')].map((el) => el.dataset.testid)
+    );
+
+    // Extract bio from hover card - try multiple selectors
+    let bioElement = hoverCard.querySelector('[data-testid="UserDescription"]');
+    if (!bioElement) {
+      // Fallback: look for bio in common locations
+      bioElement = hoverCard.querySelector('[data-testid="UserBio"]');
+    }
+    if (!bioElement) {
+      // Fallback: look for the bio text container (usually after name/handle)
+      const spans = hoverCard.querySelectorAll('span');
+      for (const span of spans) {
+        // Bio is usually longer text, not a name or handle
+        const text = span.textContent?.trim() || '';
+        if (text.length > 30 && !text.startsWith('@') && !text.includes('followers')) {
+          bioElement = span;
+          break;
+        }
+      }
+    }
+    const bio = bioElement?.textContent?.trim() || '';
+
+    // Close hover card
+    profileLink.dispatchEvent(new PointerEvent('pointerleave', eventOptions));
+    profileLink.dispatchEvent(new MouseEvent('mouseleave', eventOptions));
+
+    // Log for verification
+    if (bio) {
+      console.log(`[Amplifier] Extracted bio for @${handle}:`, bio);
+    } else {
+      console.log(`[Amplifier] No bio found for @${handle}`);
+    }
+
+    return bio;
+  } catch (error) {
+    console.error('[Amplifier] Error extracting bio:', error);
+    return '';
+  }
+}
+
+/**
  * Extract profile data from a tweet element
  * @param {Element} tweetElement - The tweet article element
  * @returns {Object|null} Profile data or null
  */
 function _extractProfileData(tweetElement) {
   try {
+    const getPrimaryUserNameNode = () => {
+      const nodes = tweetElement.querySelectorAll('[data-testid="User-Name"]');
+      for (const node of nodes) {
+        // Skip reposter/social context and quoted tweets
+        if (node.closest('[data-testid="socialContext"]')) {
+          continue;
+        }
+        if (node.closest('[data-testid="quoteTweet"]')) {
+          continue;
+        }
+        return node;
+      }
+      return nodes[0] || null;
+    };
+
     const profile = {
       handle: '',
       displayName: '',
@@ -149,17 +288,14 @@ function _extractProfileData(tweetElement) {
       isVerified: false,
     };
 
-    // Get author handle
-    const authorLinks = tweetElement.querySelectorAll('a[role="link"]');
-    for (const link of authorLinks) {
-      const href = link.getAttribute('href');
-      if (href && href.startsWith('/') && !href.includes('/status/')) {
-        profile.handle = href.slice(1);
-        const nameSpan = link.querySelector('span');
-        if (nameSpan) {
-          profile.displayName = nameSpan.innerText;
-        }
-        break;
+    // Get author handle from the primary tweet author block (avoids picking the reposter)
+    const primaryUserNode = getPrimaryUserNameNode();
+    const authorLink = primaryUserNode?.querySelector('a[href^="/"]');
+    if (authorLink) {
+      profile.handle = authorLink.getAttribute('href').slice(1);
+      const nameSpan = authorLink.querySelector('span');
+      if (nameSpan) {
+        profile.displayName = nameSpan.innerText;
       }
     }
 
@@ -170,7 +306,10 @@ function _extractProfileData(tweetElement) {
     // They would require hovering or visiting the profile
     // We'll let the background script detect category from name
 
-    return profile.handle ? profile : null;
+    if (profile.handle) {
+      return profile;
+    }
+    return null;
   } catch (error) {
     console.error('Error extracting profile data:', error);
     return null;
@@ -180,57 +319,175 @@ function _extractProfileData(tweetElement) {
 /**
  * Extract tweet data from a tweet element
  * @param {Element} tweetElement - The tweet article element
- * @returns {Object|null} Tweet data or null if extraction failed
+ * @returns {Object|null} Tweet data with structure:
+ *   {
+ *     tweetId: string,
+ *     url: string,
+ *     text: string,
+ *     hasMedia: boolean,
+ *     author: { handle: string, displayName: string, isVerified: boolean },
+ *     quotedTweet: { text: string, author: { handle, displayName, isVerified } } | null
+ *   }
  */
 function extractTweetData(tweetElement) {
   try {
+    const getPrimaryUserNameNode = () => {
+      const nodes = tweetElement.querySelectorAll('[data-testid="User-Name"]');
+      for (const node of nodes) {
+        if (node.closest('[data-testid="socialContext"]')) {
+          continue;
+        }
+        if (node.closest('[data-testid="quoteTweet"]')) {
+          continue;
+        }
+        return node;
+      }
+      return nodes[0] || null;
+    };
+
     // Get tweet text
     const textElement = tweetElement.querySelector('[data-testid="tweetText"]');
     const text = textElement ? textElement.innerText : '';
 
     // Get author info
-    const authorLinks = tweetElement.querySelectorAll('a[role="link"]');
-    let author = '';
+    const primaryUserNode = getPrimaryUserNameNode();
+    const authorLink = primaryUserNode?.querySelector('a[href^="/"]');
     let authorHandle = '';
-    for (const link of authorLinks) {
-      const href = link.getAttribute('href');
-      if (href && href.startsWith('/') && !href.includes('/status/')) {
-        authorHandle = href.slice(1); // Remove leading slash
-        const nameSpan = link.querySelector('span');
-        if (nameSpan) {
-          author = nameSpan.innerText;
-        }
-        break;
+    let authorDisplayName = '';
+    if (authorLink) {
+      authorHandle = authorLink.getAttribute('href').slice(1);
+      const nameSpan = authorLink.querySelector('span');
+      if (nameSpan) {
+        authorDisplayName = nameSpan.innerText;
       }
     }
 
+    // Check for verified badge on the primary author (exclude quoted tweet badges)
+    let authorIsVerified = false;
+    if (primaryUserNode) {
+      authorIsVerified = !!primaryUserNode.querySelector('[data-testid="icon-verified"]');
+    }
+
     // Get tweet URL/ID from the time element's parent link
-    const timeElement = tweetElement.querySelector('time');
+    // Skip time elements inside quoted tweet containers (role="link" with tabindex="0")
     let url = '';
     let tweetId = '';
-    if (timeElement) {
-      const timeLink = timeElement.closest('a');
-      if (timeLink) {
+    const timeElements = tweetElement.querySelectorAll('time');
+    for (const timeEl of timeElements) {
+      // Skip time elements inside quoted tweet containers
+      if (timeEl.closest('[role="link"][tabindex="0"]')) {
+        continue;
+      }
+      const timeLink = timeEl.closest('a');
+      if (timeLink && timeLink.href.includes('/status/')) {
         url = timeLink.href;
         const match = url.match(/status\/(\d+)/);
         if (match) {
           tweetId = match[1];
         }
+        break;
       }
     }
 
-    // Check for quoted tweet
+    // Fallback: scan all links in the tweet for a status URL
+    // Skip links inside quoted containers or tweet text (which may contain self-referencing URLs)
+    if (!tweetId || !url) {
+      const statusLink = Array.from(tweetElement.querySelectorAll('a[href*="/status/"]')).find(
+        (link) =>
+          !link.closest('[data-testid="quoteTweet"]') &&
+          !link.closest('[role="link"][tabindex="0"]') &&
+          !link.closest('[data-testid="tweetText"]')
+      );
+      if (statusLink) {
+        url = url || statusLink.href;
+        const match = statusLink.href.match(/status\/(\d+)/);
+        if (match) {
+          tweetId = tweetId || match[1];
+        }
+      }
+    }
+
+    // Check for quoted tweet (support both quoteTweet container and generic nested tweet text)
     let quotedTweet = null;
     const quotedTweetElement = tweetElement.querySelector('[data-testid="quoteTweet"]');
-    if (quotedTweetElement) {
-      const quotedText = quotedTweetElement.querySelector('[data-testid="tweetText"]');
-      const quotedAuthorLink = quotedTweetElement.querySelector('a[role="link"]');
-      if (quotedText) {
-        quotedTweet = {
-          text: quotedText.innerText,
-          author: quotedAuthorLink ? quotedAuthorLink.getAttribute('href')?.slice(1) || '' : '',
-        };
+    const tweetTextNodes = Array.from(
+      tweetElement.querySelectorAll('[data-testid="tweetText"]')
+    ).filter((node) => !node.closest('[data-testid="socialContext"]'));
+
+    const quotedTextNode =
+      (quotedTweetElement && quotedTweetElement.querySelector('[data-testid="tweetText"]')) ||
+      // Prefer a tweetText node that is inside a link that itself contains a User-Name (typical quote shell)
+      tweetTextNodes.find((node) =>
+        node.closest('[role="link"]')?.querySelector('[data-testid="User-Name"]')
+      ) ||
+      tweetTextNodes[1] || // second tweetText in the article is usually the quote
+      null;
+
+    if (quotedTextNode) {
+      // Find the nearest ancestor that contains the quoted tweet author block
+      const quoteContainer =
+        quotedTweetElement ||
+        quotedTextNode.closest('[role="link"]') || // quoted shell is usually a link
+        quotedTextNode.closest('[data-testid="tweet"]') ||
+        tweetElement;
+
+      // Find the User-Name element in the quote container
+      const quotedUserNameEl = quoteContainer.querySelector('[data-testid="User-Name"]');
+
+      const quotedAuthorLink =
+        quoteContainer.querySelector('[data-testid="User-Name"] a[href^="/"]') ||
+        quotedUserNameEl?.querySelector('a[href^="/"]') ||
+        quoteContainer.querySelector('a[href^="/"][role="link"]') ||
+        quoteContainer.querySelector('a[href^="/"]');
+
+      let quotedAuthorHandle = '';
+      let quotedAuthorDisplayName = '';
+
+      if (quotedAuthorLink) {
+        quotedAuthorHandle = quotedAuthorLink.getAttribute('href')?.slice(1) || '';
+        // Try to get display name from the link's span
+        const nameSpan = quotedAuthorLink.querySelector('span');
+        if (nameSpan) {
+          quotedAuthorDisplayName = nameSpan.innerText;
+        }
       }
+
+      // Fallback: extract handle from text content when no anchor exists
+      if (!quotedAuthorHandle && quotedUserNameEl) {
+        const textContent = quotedUserNameEl.textContent || '';
+        const handleMatch = textContent.match(/@(\w+)/);
+        if (handleMatch) {
+          quotedAuthorHandle = handleMatch[1];
+        }
+      }
+
+      // Fallback for display name: try to find it in the User-Name element
+      if (!quotedAuthorDisplayName && quotedUserNameEl) {
+        // The display name is usually in the first span before the @handle
+        const spans = quotedUserNameEl.querySelectorAll('span');
+        for (const span of spans) {
+          const spanText = span.innerText?.trim();
+          // Skip if it's a handle (@...) or empty
+          if (spanText && !spanText.startsWith('@') && spanText.length > 0) {
+            quotedAuthorDisplayName = spanText;
+            break;
+          }
+        }
+      }
+
+      // Check for verified badge in quoted tweet
+      const quotedIsVerified = quotedUserNameEl
+        ? !!quotedUserNameEl.querySelector('[data-testid="icon-verified"]')
+        : false;
+
+      quotedTweet = {
+        text: quotedTextNode.innerText,
+        author: {
+          handle: quotedAuthorHandle,
+          displayName: quotedAuthorDisplayName || quotedAuthorHandle, // Fallback to handle
+          isVerified: quotedIsVerified,
+        },
+      };
     }
 
     // Check for media
@@ -238,19 +495,20 @@ function extractTweetData(tweetElement) {
       '[data-testid="tweetPhoto"], [data-testid="videoPlayer"]'
     );
 
-    // Check for verified badge
-    const isVerified = !!tweetElement.querySelector('[data-testid="icon-verified"]');
-
-    return {
+    const result = {
       tweetId,
       url,
       text,
-      author: author || `@${authorHandle}`,
-      authorHandle,
-      quotedTweet,
       hasMedia,
-      isVerified,
+      author: {
+        handle: authorHandle,
+        displayName: authorDisplayName || authorHandle, // Fallback to handle
+        isVerified: authorIsVerified,
+      },
+      quotedTweet,
     };
+
+    return result;
   } catch (error) {
     console.error('Error extracting tweet data:', error);
     return null;
@@ -300,6 +558,7 @@ function createAmplifyButton() {
     {
       className: 'iran-amplifier-btn',
       title: 'Generate response with Iran Amplifier',
+      'aria-label': 'Amplify this post with Iran Amplifier',
     },
     [icon, text]
   );
@@ -319,7 +578,12 @@ function createPanel() {
   titleSpan.appendChild(document.createTextNode(' Iran Amplifier'));
   const header = createElement('div', { className: 'iap-header' }, [
     titleSpan,
-    createElement('button', { className: 'iap-close', title: 'Close', textContent: '×' }),
+    createElement('button', {
+      className: 'iap-close',
+      title: 'Close',
+      'aria-label': 'Close panel',
+      textContent: '×',
+    }),
   ]);
 
   // Type selector
@@ -336,14 +600,26 @@ function createPanel() {
     }),
   ]);
 
-  // Content area
+  // Content area - separate containers per tab
   const loading = createElement('div', { className: 'iap-loading', style: 'display: none;' }, [
     createElement('div', { className: 'iap-spinner' }),
     createElement('span', { textContent: 'Generating responses...' }),
   ]);
   const error = createElement('div', { className: 'iap-error', style: 'display: none;' });
-  const responses = createElement('div', { className: 'iap-responses' });
-  const content = createElement('div', { className: 'iap-content' }, [loading, error, responses]);
+  // Separate response containers for reply and quote tabs
+  const replyContainer = createElement('div', {
+    className: 'iap-responses iap-replies-container',
+  });
+  const quoteContainer = createElement('div', {
+    className: 'iap-responses iap-quotes-container',
+    style: 'display: none;',
+  });
+  const content = createElement('div', { className: 'iap-content' }, [
+    loading,
+    error,
+    replyContainer,
+    quoteContainer,
+  ]);
 
   // Feedback area
   const feedbackInput = createElement('input', {
@@ -354,6 +630,7 @@ function createPanel() {
   const feedbackBtn = createElement('button', {
     className: 'iap-feedback-btn',
     title: 'Regenerate',
+    'aria-label': 'Regenerate responses',
   });
   feedbackBtn.appendChild(createIcon('refresh', '16px'));
   const feedback = createElement('div', { className: 'iap-feedback' }, [
@@ -369,17 +646,33 @@ function createPanel() {
   // Event listeners
   header.querySelector('.iap-close').addEventListener('click', hidePanel);
 
-  // Type selector - switches display without API call when cached
+  // Type selector - show/hide containers and generate on-demand
   typeSelector.querySelectorAll('.iap-type-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       typeSelector.querySelectorAll('.iap-type-btn').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
       currentResponseType = btn.dataset.type;
+
+      // Show/hide appropriate container
+      if (currentResponseType === 'reply') {
+        replyContainer.style.display = 'block';
+        quoteContainer.style.display = 'none';
+        replyContainer.scrollTop = 0;
+      } else {
+        replyContainer.style.display = 'none';
+        quoteContainer.style.display = 'block';
+        quoteContainer.scrollTop = 0;
+      }
+
       if (currentTweetData) {
-        // Display cached responses if available (no API call)
-        if (cachedBatchResult) {
-          displayResponsesForTab(cachedBatchResult, currentResponseType);
+        // Check if we have cached responses for this tab
+        const cachedResult =
+          currentResponseType === 'reply' ? cachedReplyResult : cachedQuoteResult;
+        if (cachedResult) {
+          // Already displayed, just show the container
+          repositionPanel();
         } else {
+          // Generate on-demand for this tab
           generateAndDisplay();
         }
       }
@@ -430,11 +723,18 @@ function showPanel(x, y) {
   panelContainer.style.left = `${left}px`;
   panelContainer.style.top = `${top}px`;
 
-  // Reset state
-  const responsesEl = panelContainer.querySelector('.iap-responses');
-  while (responsesEl.firstChild) {
-    responsesEl.removeChild(responsesEl.firstChild);
+  // Reset state - clear both containers
+  const replyContainerEl = panelContainer.querySelector('.iap-replies-container');
+  const quoteContainerEl = panelContainer.querySelector('.iap-quotes-container');
+  while (replyContainerEl.firstChild) {
+    replyContainerEl.removeChild(replyContainerEl.firstChild);
   }
+  while (quoteContainerEl.firstChild) {
+    quoteContainerEl.removeChild(quoteContainerEl.firstChild);
+  }
+  // Show reply container, hide quote container (reply is default)
+  replyContainerEl.style.display = 'block';
+  quoteContainerEl.style.display = 'none';
   panelContainer.querySelector('.iap-error').style.display = 'none';
   panelContainer.querySelector('.iap-feedback-input').value = '';
 }
@@ -447,7 +747,9 @@ function hidePanel() {
     panelContainer.style.display = 'none';
   }
   currentTweetData = null;
-  cachedBatchResult = null; // Clear cached responses
+  // Clear cached responses for both tabs
+  cachedReplyResult = null;
+  cachedQuoteResult = null;
 }
 
 /**
@@ -574,10 +876,11 @@ function createResponseCard(response, index, responseType) {
     replyBtn.addEventListener('click', () => {
       const tweetId = currentTweetData?.tweetId;
       if (tweetId) {
-        const replyUrl = `https://x.com/intent/tweet?in_reply_to=${tweetId}&text=${encodeURIComponent(response.text)}`;
-        window.open(replyUrl, '_blank');
+        const replyUrl = `https://twitter.com/intent/tweet?in_reply_to=${tweetId}&text=${encodeURIComponent(response.text)}`;
+        window.open(replyUrl, 'amplifier-intent', 'width=620,height=720,noopener,noreferrer');
         // Record amplification
         browser.runtime.sendMessage({ type: 'recordAmplification', action: 'reply' });
+        hidePanel();
       }
     });
 
@@ -598,11 +901,11 @@ function createResponseCard(response, index, responseType) {
     quoteBtn.addEventListener('click', () => {
       const tweetUrl = currentTweetData?.url;
       if (tweetUrl) {
-        const textWithQuote = `${response.text}\n\n${tweetUrl}`;
-        const quoteIntentUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(textWithQuote)}`;
-        window.open(quoteIntentUrl, '_blank');
+        const quoteIntentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(response.text)}&url=${encodeURIComponent(tweetUrl)}`;
+        window.open(quoteIntentUrl, 'amplifier-intent', 'width=620,height=720,noopener,noreferrer');
         // Record amplification
         browser.runtime.sendMessage({ type: 'recordAmplification', action: 'quote' });
+        hidePanel();
       }
     });
 
@@ -619,12 +922,9 @@ function createResponseCard(response, index, responseType) {
   copyBtn.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(response.text);
-      copyBtn.replaceChildren(createIcon('check', '14px'), document.createTextNode('Copied!'));
-      setTimeout(() => {
-        copyBtn.replaceChildren(createIcon('copy', '14px'), document.createTextNode('Copy'));
-      }, 2000);
       // Record amplification
       browser.runtime.sendMessage({ type: 'recordAmplification', action: 'copy' });
+      hidePanel();
     } catch (err) {
       console.error('Copy failed:', err);
     }
@@ -634,37 +934,40 @@ function createResponseCard(response, index, responseType) {
 }
 
 /**
- * Display responses for a specific tab from cached batch result
- * @param {Object} batchResult - The cached batch result with analysis, replies, and quotes
+ * Display responses for a specific tab
+ * @param {Object} result - The result with analysis and responses
  * @param {string} responseType - 'reply' or 'quote'
  */
-function displayResponsesForTab(batchResult, responseType) {
-  const container = panelContainer.querySelector('.iap-responses');
+function displayResponsesForTab(result, responseType) {
+  // Get the appropriate container for this tab
+  const container = panelContainer.querySelector(
+    responseType === 'reply' ? '.iap-replies-container' : '.iap-quotes-container'
+  );
   while (container.firstChild) {
     container.removeChild(container.firstChild);
   }
 
   // Show analysis if available
-  if (batchResult.analysis) {
+  if (result.analysis) {
     const analysisEl = createElement('div', { className: 'iap-analysis' }, [
       createElement('span', {
         className: 'iap-analysis-label',
         textContent: 'Original post:',
       }),
       createElement('span', {
-        className: `iap-sentiment ${batchResult.analysis.post_sentiment}`,
-        textContent: batchResult.analysis.post_sentiment,
+        className: `iap-sentiment ${result.analysis.post_sentiment}`,
+        textContent: result.analysis.post_sentiment.replace(/_/g, ' ').toUpperCase(),
       }),
       createElement('span', {
         className: 'iap-approach',
-        textContent: batchResult.analysis.recommended_approach || '',
+        textContent: result.analysis.recommended_approach || '',
       }),
     ]);
     container.appendChild(analysisEl);
   }
 
-  // Get responses for the current tab (select replies or quotes based on tab)
-  const responses = responseType === 'reply' ? batchResult.replies || [] : batchResult.quotes || [];
+  // Get responses (new format: result.responses)
+  const responses = result.responses || [];
 
   // Show responses
   if (responses.length > 0) {
@@ -680,17 +983,24 @@ function displayResponsesForTab(batchResult, responseType) {
     );
   }
 
+  // Scroll to top of the container
+  container.scrollTop = 0;
+
   // Reposition panel after content changes to stay within viewport
   repositionPanel();
 }
 
 /**
  * Display responses in panel
- * @param {Object} result - API result
+ * @param {Object} result - API result with analysis and responses
  */
 function displayResponses(result) {
-  // Cache the result for tab switching
-  cachedBatchResult = result;
+  // Cache the result for this specific tab
+  if (currentResponseType === 'reply') {
+    cachedReplyResult = result;
+  } else {
+    cachedQuoteResult = result;
+  }
 
   // Display using the tab-specific function
   displayResponsesForTab(result, currentResponseType);
@@ -735,7 +1045,7 @@ async function generateAndDisplay(feedback = null, forceRegenerate = false) {
  * @param {Event} event - Click event
  * @param {Element} tweetElement - Tweet element
  */
-function handleAmplifyClick(event, tweetElement) {
+async function handleAmplifyClick(event, tweetElement) {
   event.stopPropagation();
   event.preventDefault();
 
@@ -745,9 +1055,13 @@ function handleAmplifyClick(event, tweetElement) {
     return;
   }
 
+  // Check if this is a new tweet
+  const isNewTweet = currentTweetData?.tweetId !== tweetData.tweetId;
+
   // Clear cached responses when switching to a different tweet
-  if (currentTweetData?.tweetId !== tweetData.tweetId) {
-    cachedBatchResult = null;
+  if (isNewTweet) {
+    cachedReplyResult = null;
+    cachedQuoteResult = null;
   }
 
   currentTweetData = tweetData;
@@ -763,6 +1077,15 @@ function handleAmplifyClick(event, tweetElement) {
       btn.classList.toggle('active', btn.dataset.type === 'reply');
     });
   }
+
+  // Bio extraction disabled - X's hover card API causes errors
+  // TODO: Find alternative approach (e.g., profile page scrape or manual entry)
+  // if (isNewTweet) {
+  //   const bio = await extractAuthorBio(tweetElement);
+  //   if (bio && currentTweetData?.author) {
+  //     currentTweetData.author.bio = bio;
+  //   }
+  // }
 
   // Generate initial responses
   generateAndDisplay();
@@ -819,6 +1142,7 @@ function extractTweetFromDialog(dialogElement) {
     let textElement = null;
     let authorElement = null;
     let tweetUrl = '';
+    let container = null;
 
     // Find the tweet text that's NOT in the compose area
     for (const el of tweetTextElements) {
@@ -829,7 +1153,7 @@ function extractTweetFromDialog(dialogElement) {
       textElement = el;
 
       // Find author and URL near this text
-      const container =
+      container =
         el.closest('div[data-testid="Tweet-User-Avatar"]')?.parentElement ||
         el.closest('article') ||
         el.parentElement?.parentElement?.parentElement;
@@ -859,16 +1183,26 @@ function extractTweetFromDialog(dialogElement) {
 
     const text = textElement.innerText;
 
-    // Extract author
-    let author = '';
+    // Extract author info
     let authorHandle = '';
+    let authorDisplayName = '';
     if (authorElement) {
       const href = authorElement.getAttribute('href');
       if (href) {
         authorHandle = href.slice(1);
-        author = `@${authorHandle}`;
+      }
+      // Try to get display name
+      const nameSpan = authorElement.querySelector('span');
+      if (nameSpan) {
+        authorDisplayName = nameSpan.innerText;
       }
     }
+
+    // Check for verified badge
+    const userNameEl = container?.querySelector('[data-testid="User-Name"]');
+    const isVerified = userNameEl
+      ? !!userNameEl.querySelector('[data-testid="icon-verified"]')
+      : false;
 
     // Extract tweet ID
     let tweetId = '';
@@ -883,10 +1217,13 @@ function extractTweetFromDialog(dialogElement) {
       tweetId,
       url: tweetUrl,
       text,
-      author,
-      authorHandle,
-      quotedTweet: null,
       hasMedia: false,
+      author: {
+        handle: authorHandle,
+        displayName: authorDisplayName || authorHandle,
+        isVerified,
+      },
+      quotedTweet: null,
     };
   } catch (error) {
     console.error('Error extracting tweet from dialog:', error);
@@ -906,6 +1243,7 @@ function createToolbarAmplifyButton() {
     {
       className: 'iran-amplifier-toolbar-btn',
       title: 'Generate response with Iran Amplifier',
+      'aria-label': 'Generate response with Iran Amplifier',
       type: 'button',
     },
     [iconSpan]
@@ -930,7 +1268,8 @@ function handleComposeAmplifyClick(event, dialogElement) {
 
   // Clear cached responses when switching to a different tweet
   if (currentTweetData?.tweetId !== tweetData.tweetId) {
-    cachedBatchResult = null;
+    cachedReplyResult = null;
+    cachedQuoteResult = null;
   }
 
   currentTweetData = tweetData;
@@ -1047,9 +1386,10 @@ function createQuestionSection(name, label, options, defaultValue) {
 
 /**
  * Create the onboarding modal
+ * @param {Object} savedPreferences - Already saved preferences to pre-select
  * @returns {Element} Modal element
  */
-function createOnboardingModal() {
+function createOnboardingModal(savedPreferences = {}) {
   const overlay = createElement('div', { className: 'iap-onboard-overlay' });
   const modal = createElement('div', { className: 'iap-onboard-modal' });
 
@@ -1066,6 +1406,12 @@ function createOnboardingModal() {
     }),
   ]);
 
+  // Use saved preferences or fall back to defaults
+  const voiceStyle = savedPreferences.voiceStyle || 'personal';
+  const background = savedPreferences.background || 'other';
+  const approach = savedPreferences.approach || 'mixed';
+  const length = savedPreferences.length || 'medium';
+
   // Questions container
   const questions = createElement('div', { className: 'iap-onboard-questions' });
   questions.appendChild(
@@ -1073,17 +1419,17 @@ function createOnboardingModal() {
       'voiceStyle',
       'How do you prefer to communicate?',
       VOICE_STYLES,
-      'personal'
+      voiceStyle
     )
   );
   questions.appendChild(
-    createQuestionSection('background', "What's your background?", BACKGROUNDS, 'other')
+    createQuestionSection('background', "What's your background?", BACKGROUNDS, background)
   );
   questions.appendChild(
-    createQuestionSection('approach', 'What resonates with you?', APPROACHES, 'mixed')
+    createQuestionSection('approach', 'What resonates with you?', APPROACHES, approach)
   );
   questions.appendChild(
-    createQuestionSection('length', 'Preferred response length?', LENGTHS, 'medium')
+    createQuestionSection('length', 'Preferred response length?', LENGTHS, length)
   );
 
   // Actions
@@ -1112,10 +1458,22 @@ function createOnboardingModal() {
 
 /**
  * Show the onboarding modal
+ * Fetches saved preferences first to pre-select them
  */
-function showOnboardingModal() {
+async function showOnboardingModal() {
   if (!onboardingModal) {
-    onboardingModal = createOnboardingModal();
+    // Fetch any already-saved preferences
+    let savedPreferences = {};
+    try {
+      const response = await browser.runtime.sendMessage({ type: 'getUserPreferences' });
+      if (response.success && response.data?.preferences) {
+        savedPreferences = response.data.preferences;
+      }
+    } catch (error) {
+      console.error('Failed to fetch saved preferences:', error);
+    }
+
+    onboardingModal = createOnboardingModal(savedPreferences);
     document.body.appendChild(onboardingModal);
   }
   onboardingModal.style.display = 'flex';
@@ -1173,8 +1531,10 @@ async function checkOnboarding() {
   try {
     const response = await browser.runtime.sendMessage({ type: 'isOnboardingComplete' });
     if (response.success && !response.data) {
-      // Small delay to ensure page is loaded
-      setTimeout(showOnboardingModal, 1500);
+      // Small delay to ensure page is loaded, then show modal with saved preferences
+      setTimeout(() => {
+        showOnboardingModal().catch((err) => console.error('Failed to show onboarding:', err));
+      }, 1500);
     }
   } catch (error) {
     console.error('Failed to check onboarding status:', error);

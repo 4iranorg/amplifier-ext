@@ -16,14 +16,6 @@ const connectionStatus = document.getElementById('connection-status');
 const saveSettingsBtn = document.getElementById('save-settings');
 const viewDashboardBtn = document.getElementById('view-dashboard');
 
-// Voice preferences elements
-const voiceStyleSelect = document.getElementById('voice-style');
-const backgroundSelect = document.getElementById('background');
-const approachSelect = document.getElementById('approach');
-const responseLengthSelect = document.getElementById('response-length');
-const resetPreferencesBtn = document.getElementById('reset-preferences');
-const fingerprintValue = document.getElementById('fingerprint-value');
-
 // Stats elements
 const statTodayTokens = document.getElementById('stat-today-tokens');
 const statTodayCost = document.getElementById('stat-today-cost');
@@ -83,7 +75,7 @@ function populateModels(provider, selectedModel = null) {
   models.forEach((model) => {
     const option = document.createElement('option');
     option.value = model.id;
-    option.textContent = model.name;
+    option.textContent = `${model.id} | ${model.name}`;
     if (selectedModel === model.id || (!selectedModel && model.default)) {
       option.selected = true;
     }
@@ -100,62 +92,6 @@ async function loadSettings() {
   providerSelect.value = result.provider || 'openai';
   populateModels(providerSelect.value, result.model);
   apiKeyInput.value = result.apiKey || '';
-
-  await loadVoicePreferences();
-}
-
-/**
- * Load voice preferences from storage
- */
-async function loadVoicePreferences() {
-  try {
-    const response = await browser.runtime.sendMessage({ type: 'getUserPreferences' });
-    if (response.success && response.data) {
-      const { preferences, seed } = response.data;
-
-      if (preferences) {
-        voiceStyleSelect.value = preferences.voiceStyle || 'personal';
-        backgroundSelect.value = preferences.background || 'other';
-        approachSelect.value = preferences.approach || 'mixed';
-        responseLengthSelect.value = preferences.length || 'medium';
-      }
-
-      if (seed) {
-        fingerprintValue.textContent = seed.slice(0, 3) + '****';
-        fingerprintValue.title = 'Your unique voice identifier';
-      }
-    }
-  } catch (error) {
-    console.error('Failed to load voice preferences:', error);
-  }
-}
-
-/**
- * Save voice preferences
- */
-async function saveVoicePreferences() {
-  const preferences = {
-    voiceStyle: voiceStyleSelect.value,
-    background: backgroundSelect.value,
-    approach: approachSelect.value,
-    length: responseLengthSelect.value,
-  };
-
-  try {
-    await browser.runtime.sendMessage({ type: 'saveUserPreferences', preferences });
-  } catch (error) {
-    console.error('Failed to save voice preferences:', error);
-  }
-}
-
-/**
- * Reset voice preferences to defaults
- */
-function resetVoicePreferences() {
-  voiceStyleSelect.value = 'personal';
-  backgroundSelect.value = 'other';
-  approachSelect.value = 'mixed';
-  responseLengthSelect.value = 'medium';
 }
 
 /**
@@ -169,7 +105,6 @@ async function saveSettings() {
   };
 
   await browser.storage.local.set(settings);
-  await saveVoicePreferences();
 
   saveSettingsBtn.replaceChildren(createIcon('check', '14px'), document.createTextNode(' Saved!'));
   setTimeout(() => {
@@ -354,7 +289,6 @@ providerSelect.addEventListener('change', () => {
 toggleKeyBtn.addEventListener('click', toggleKeyVisibility);
 testConnectionBtn.addEventListener('click', testConnection);
 saveSettingsBtn.addEventListener('click', saveSettings);
-resetPreferencesBtn.addEventListener('click', resetVoicePreferences);
 dismissUpdateBtn.addEventListener('click', dismissUpdateNotification);
 
 viewDashboardBtn.addEventListener('click', (e) => {
