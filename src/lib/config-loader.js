@@ -140,9 +140,9 @@ export const CONFIG_DEFAULTS = {
     },
     {
       id: 2002,
-      title: 'EU unanimous terrorist designation push',
+      title: 'Enforce EU IRGC terrorist designation',
       description:
-        'Call on all 27 EU member states to unanimously vote for designating the IRGC as a terrorist organization.',
+        'Welcome the EU designation of the IRGC as a terrorist organization (January 2026). Push for full enforcement: asset freezes, travel bans, cutting all financial ties with IRGC-linked entities, and urge other nations to follow.',
       default: true,
     },
     {
@@ -161,9 +161,9 @@ export const CONFIG_DEFAULTS = {
     },
     {
       id: 2005,
-      title: 'Diplomatic downgrades',
+      title: 'Expel diplomats and downgrade relations',
       description:
-        'Call for diplomatic de-legitimization of the Islamic Republic and closure or downgrading of its embassies in democratic countries.',
+        'Call for expelling Iranian regime diplomats and closing or downgrading Islamic Republic embassies in democratic countries. No diplomatic legitimacy for a regime that massacres its own people.',
       default: true,
     },
     {
@@ -193,6 +193,13 @@ export const CONFIG_DEFAULTS = {
       description:
         'Advocate for recognition and support of Reza Pahlavi as an interim leader during democratic transition.',
       default: false,
+    },
+    {
+      id: 2010,
+      title: "Expel regime officials' families from the West",
+      description:
+        'Demand that Western governments identify and expel family members of Iranian regime officials who enjoy luxury lives in free countries while their families commit atrocities against Iranians. No safe haven for the families of murderers.',
+      default: true,
     },
   ],
 
@@ -257,6 +264,7 @@ export const CONFIG_DEFAULTS = {
 5. Generate exactly 3 responses of the type specified in the TASK section (reply OR quote)
 6. REPLY responses are direct replies to the original post
 7. QUOTE responses are quote reposts with commentary that can stand alone
+8. NEVER use em dashes (—) in responses. Use commas, periods, or colons instead.
 
 ## ULTIMATE MISSION
 The user's goal is the END of the Islamic Republic and transition to a democratic Iran. This is not about reforming the regime or improving relations - it's about exposing criminals and building support for regime change. Every response should serve this mission.
@@ -304,9 +312,15 @@ In these cases, the author is on the same side as the Iranian people - respond b
 - Example: If someone calls out Tucker Carlson for being "pro-Iran" (pro-regime), agree and add evidence of regime crimes
 
 **If author is SUPPORTIVE of Iranian freedom or human rights:**
-- For REPLIES: MUST open with brief acknowledgment + @handle, then strategic argument
-  - Vary openers: "Grateful you're raising this, @handle." / "Thank you for calling this out, @handle." / "Appreciate you saying this, @handle."
-  - Do NOT repeat the same opener across the 3 responses
+- For REPLIES: Open with brief acknowledgment, then strategic argument. The reply context shows who you're responding to - no need to always include @handle.
+  - Vary openers widely across these styles:
+    - Direct affirmation: "Exactly this." / "This is crucial." / "This needs to be said more."
+    - Building momentum: "And the evidence keeps mounting." / "The world is finally paying attention."
+    - Pivoting to action: "Now the question is what comes next." / "This is why action matters."
+    - Brief thanks (use sparingly, max 1 of 3): "Thank you for raising this."
+  - CRITICAL: Each of the 3 responses MUST use a distinctly different opener style
+  - NEVER use all 3 openers as gratitude phrases ("Thank you" / "Grateful" / "Appreciate")
+  - Keep openers SHORT (2-5 words) - the strategic argument is what matters
 - For QUOTES: NO @mention needed (original tweet is embedded). Use punchy multi-sentence format.
 - Amplify their point with selected ARGUMENTS
 
