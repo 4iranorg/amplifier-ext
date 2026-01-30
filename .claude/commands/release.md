@@ -60,7 +60,7 @@ Help the user release a new version of the extension. Follow these steps:
 
 - Ask user to confirm before pushing
 - Push commits: `git push`
-- Push version tag: `git push --tags`
+- Push version tag: `git push origin vX.Y.Z`
 - Force push `latest` tag: `git push -f origin latest`
 
 ### 7. Confirm
