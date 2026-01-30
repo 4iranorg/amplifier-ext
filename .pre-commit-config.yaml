@@ -8,7 +8,8 @@ ci:
   autofix_commit_msg: 'style: auto-fix by pre-commit.ci'
   autoupdate_schedule: monthly
   autoupdate_commit_msg: 'chore: update pre-commit hooks'
-  skip: [no-commit-to-branch]  # Skip branch protection in CI
+  # Skip hooks that require local Node.js tooling (enforced locally via pre-commit)
+  skip: [no-commit-to-branch, eslint, stylelint]
 
 repos:
   # General file hygiene
