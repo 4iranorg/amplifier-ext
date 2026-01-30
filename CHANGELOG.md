@@ -5,6 +5,28 @@ All notable changes to Iran Amplifier will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-01-30
+
+### Added
+
+- Quick Start guide page with step-by-step installation instructions
+- Cost transparency section on landing page explaining AI service fees
+- Alpine.js CSP build for content script components
+
+### Changed
+
+- Landing page: simplified hero description for clarity
+- Landing page: reordered sections (How It Works before Control)
+- Landing page: updated terminology (Arguments → Talking Points, Call to Actions → Calls to Action)
+- Added "(Twitter)" clarification after X references throughout
+- Refactored content script to Alpine.js components for better maintainability
+- Improved response style with strategic angles and proper classification
+- Added response logic for allies criticizing regime apologists
+
+### Fixed
+
+- Race condition when switching tabs during response generation
+
 ## [0.1.1] - 2026-01-28
 
 ### Added
