@@ -8,6 +8,13 @@
 @use '../mixins' as *;
 
 // --------------------------------------------------------------------------
+// Alpine.js Cloak (hide until initialized)
+// --------------------------------------------------------------------------
+[x-cloak] {
+  display: none !important;
+}
+
+// --------------------------------------------------------------------------
 // Scoped CSS Custom Properties
 // --------------------------------------------------------------------------
 // Content script injects into X pages, so we scope variables to our elements
@@ -120,7 +127,6 @@
   box-shadow:
     $shadow-xl,
     0 0 0 1px rgb(255 255 255 / 5%);
-  display: none;
   font-family: $font-family-base;
   overflow: hidden;
 }
