@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://amplifier.4iran.org/sitemap.xml
