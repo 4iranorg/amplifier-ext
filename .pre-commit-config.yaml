@@ -33,28 +33,25 @@ repos:
       - id: prettier
         types_or: [javascript, css, scss, json, html, markdown]
 
-  # JavaScript linting with ESLint
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.19.0
+  # JavaScript linting with ESLint (using local pnpm for consistent dependencies)
+  - repo: local
     hooks:
       - id: eslint
+        name: eslint
+        entry: pnpm exec eslint --fix
+        language: system
         files: \.js$
         types: [file]
-        args: ['--fix']
-        additional_dependencies:
-          - eslint@9
-          - globals
 
-  # Stylelint for SCSS
-  - repo: https://github.com/thibaudcolas/pre-commit-stylelint
-    rev: v16.12.0
+  # Stylelint for SCSS (using local pnpm for consistent dependencies)
+  - repo: local
     hooks:
       - id: stylelint
+        name: stylelint
+        entry: pnpm exec stylelint --fix
+        language: system
         files: \.(scss|css)$
-        args: ['--fix']
-        additional_dependencies:
-          - stylelint
-          - stylelint-config-standard-scss
+        types: [file]
 
   # Markdown linting
   - repo: https://github.com/DavidAnson/markdownlint-cli2
