@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quick Start Guide - Iran Amplifier</title>
+    <meta
+      name="description"
+      content="Get started with Iran Amplifier in minutes. Step-by-step installation guide for Firefox."
+    />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="landing.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-container">
+        <a href="./" class="header-brand">
+          <img src="iran.svg" alt="" class="header-logo" />
+          <h1>Iran Amplifier</h1>
+        </a>
+        <div class="header-actions">
+          <a href="https://github.com/4iranorg/amplifier-ext/releases" class="btn primary small">
+            Download
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Quick Start Content -->
+    <main class="page-content">
+      <div class="container">
+        <div class="quickstart-content">
+          <h1>Quick Start Guide</h1>
+          <p class="intro">
+            Get Iran Amplifier running in about 5 minutes. This guide walks you through installing
+            the extension and setting up your AI service.
+          </p>
+
+          <!-- Section 1: Install -->
+          <section class="quickstart-section">
+            <h2>
+              <span class="section-number">1</span>
+              Install the Extension
+            </h2>
+            <p>
+              Iran Amplifier is currently in development. To use it, you'll load it manually in
+              Firefox's developer mode. This is quick and safe.
+            </p>
+
+            <ol class="quickstart-steps">
+              <li>
+                <strong>Download the extension</strong>
+                <p>
+                  Go to the
+                  <a href="https://github.com/4iranorg/amplifier-ext/releases">releases page</a> and
+                  download the latest <code>.zip</code> file.
+                </p>
+              </li>
+              <li>
+                <strong>Extract the zip</strong>
+                <p>Unzip the file to a folder on your computer. Remember where you put it.</p>
+              </li>
+              <li>
+                <strong>Open Firefox debugging</strong>
+                <p>Type <code>about:debugging</code> in Firefox's address bar and press Enter.</p>
+              </li>
+              <li>
+                <strong>Load the extension</strong>
+                <p>
+                  Click <strong>"This Firefox"</strong> in the sidebar, then click
+                  <strong>"Load Temporary Add-on"</strong>.
+                </p>
+              </li>
+              <li>
+                <strong>Select the manifest</strong>
+                <p>
+                  Navigate to your extracted folder and select the <code>manifest.json</code> file.
+                </p>
+              </li>
+            </ol>
+
+            <div class="quickstart-note">
+              <strong>Note:</strong> Temporary add-ons are removed when Firefox closes. You'll need
+              to reload the extension each time you restart Firefox using the same steps above.
+            </div>
+          </section>
+
+          <!-- Section 2: API Key -->
+          <section class="quickstart-section">
+            <h2>
+              <span class="section-number">2</span>
+              Get an API Key
+            </h2>
+            <p>
+              An API key is like a password that lets the extension use AI services. You'll need one
+              from either OpenAI or Anthropic.
+            </p>
+
+            <div class="api-options">
+              <div class="api-option">
+                <h3>Option A: OpenAI</h3>
+                <ol>
+                  <li>
+                    Go to
+                    <a href="https://platform.openai.com/signup" target="_blank" rel="noopener"
+                      >platform.openai.com</a
+                    >
+                    and create an account
+                  </li>
+                  <li>
+                    Navigate to
+                    <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener"
+                      >API Keys</a
+                    >
+                  </li>
+                  <li>Click "Create new secret key"</li>
+                  <li>Copy the key (starts with <code>sk-</code>)</li>
+                </ol>
+              </div>
+
+              <div class="api-option">
+                <h3>Option B: Anthropic</h3>
+                <ol>
+                  <li>
+                    Go to
+                    <a href="https://console.anthropic.com/signup" target="_blank" rel="noopener"
+                      >console.anthropic.com</a
+                    >
+                    and create an account
+                  </li>
+                  <li>
+                    Navigate to
+                    <a
+                      href="https://console.anthropic.com/settings/keys"
+                      target="_blank"
+                      rel="noopener"
+                      >API Keys</a
+                    >
+                  </li>
+                  <li>Click "Create Key"</li>
+                  <li>Copy the key (starts with <code>sk-ant-</code>)</li>
+                </ol>
+              </div>
+            </div>
+
+            <div class="quickstart-note">
+              <strong>Cost:</strong> AI services charge per response. Typical cost is
+              <strong>1–5 cents</strong> per response. Both services require adding payment
+              information, but you only pay for what you use.
+            </div>
+          </section>
+
+          <!-- Section 3: Setup -->
+          <section class="quickstart-section">
+            <h2>
+              <span class="section-number">3</span>
+              First-Time Setup
+            </h2>
+            <p>
+              When you first install the extension, a setup wizard will guide you through
+              configuration.
+            </p>
+
+            <ol class="quickstart-steps">
+              <li>
+                <strong>Review privacy notice</strong>
+                <p>
+                  The extension explains how your data is handled. TL;DR: Everything stays on your
+                  device.
+                </p>
+              </li>
+              <li>
+                <strong>Choose your talking points</strong>
+                <p>Select which facts and human rights issues the AI can reference in responses.</p>
+              </li>
+              <li>
+                <strong>Choose calls to action</strong>
+                <p>Select which policy demands you want to advocate for.</p>
+              </li>
+              <li>
+                <strong>Enter your API key</strong>
+                <p>
+                  Paste the API key you copied earlier. This is stored locally on your device only.
+                </p>
+              </li>
+            </ol>
+
+            <p>That's it! You're ready to start amplifying voices for Iranian freedom.</p>
+          </section>
+
+          <!-- Section 4: Using -->
+          <section class="quickstart-section">
+            <h2>
+              <span class="section-number">4</span>
+              Using the Extension
+            </h2>
+            <ol class="quickstart-steps">
+              <li>
+                <strong>Go to X (Twitter)</strong>
+                <p>
+                  Open <a href="https://x.com" target="_blank" rel="noopener">x.com</a> in Firefox.
+                </p>
+              </li>
+              <li>
+                <strong>Find a post about Iran</strong>
+                <p>
+                  Look for posts discussing Iranian civil society, human rights, or related topics.
+                </p>
+              </li>
+              <li>
+                <strong>Click the Amplify button</strong>
+                <p>
+                  You'll see an "Amplify" button appear near posts. Click it to generate response
+                  suggestions.
+                </p>
+              </li>
+              <li>
+                <strong>Review and post</strong>
+                <p>
+                  Choose a response, edit if you like, then click Reply or Quote to post. You're
+                  always in control.
+                </p>
+              </li>
+            </ol>
+          </section>
+
+          <!-- Help -->
+          <section class="quickstart-section">
+            <h2>Need Help?</h2>
+            <p>
+              If you run into issues, check the
+              <a
+                href="https://github.com/4iranorg/amplifier-ext/issues"
+                target="_blank"
+                rel="noopener"
+                >GitHub Issues</a
+              >
+              page or open a new issue describing your problem.
+            </p>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-top-row">
+          <div class="footer-brand">
+            <a href="./" class="footer-brand-link">
+              <span class="footer-title">Iran Amplifier</span>
+            </a>
+          </div>
+          <div class="footer-links">
+            <a href="quickstart.html">Quick Start</a>
+            <a href="https://github.com/4iranorg/amplifier-ext" target="_blank">GitHub</a>
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span class="footer-solidarity">
+          <svg
+            class="heart-icon"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+            />
+          </svg>
+          In solidarity with the Iranian people
+        </span>
+        <span class="footer-copyright">&copy; 2026 4iran.org</span>
+      </div>
+    </footer>
+  </body>
+</html>
