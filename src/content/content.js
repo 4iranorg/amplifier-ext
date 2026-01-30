@@ -1033,18 +1033,22 @@ function displayResponsesForTab(result, responseType, elapsedMs = null) {
 /**
  * Display responses in panel
  * @param {Object} result - API result with analysis and responses
+ * @param {string} responseType - 'reply' or 'quote' (the type that was requested)
  * @param {number|null} elapsedMs - Time taken to generate responses in milliseconds
  */
-function displayResponses(result, elapsedMs = null) {
-  // Cache the result for this specific tab
-  if (currentResponseType === 'reply') {
+function displayResponses(result, responseType, elapsedMs = null) {
+  // Cache the result for the tab that was requested (not the currently active tab)
+  if (responseType === 'reply') {
     cachedReplyResult = result;
   } else {
     cachedQuoteResult = result;
   }
 
-  // Display using the tab-specific function
-  displayResponsesForTab(result, currentResponseType, elapsedMs);
+  // Only display if the user is still on the same tab that was requested
+  // This prevents overwriting the display if user switched tabs during generation
+  if (currentResponseType === responseType) {
+    displayResponsesForTab(result, responseType, elapsedMs);
+  }
 }
 
 /**
@@ -1057,6 +1061,10 @@ async function generateAndDisplay(feedback = null, forceRegenerate = false) {
     return;
   }
 
+  // Capture the response type at the start of the request
+  // This prevents race conditions if user switches tabs during generation
+  const requestedResponseType = currentResponseType;
+
   generationStartTime = Date.now();
   showLoading();
 
@@ -1064,7 +1072,7 @@ async function generateAndDisplay(feedback = null, forceRegenerate = false) {
     const response = await browser.runtime.sendMessage({
       type: 'generate',
       tweetData: currentTweetData,
-      responseType: currentResponseType,
+      responseType: requestedResponseType,
       feedback,
       forceRegenerate,
     });
@@ -1073,7 +1081,7 @@ async function generateAndDisplay(feedback = null, forceRegenerate = false) {
 
     if (response.success) {
       const elapsedMs = Date.now() - generationStartTime;
-      displayResponses(response.data, elapsedMs);
+      displayResponses(response.data, requestedResponseType, elapsedMs);
     } else {
       showError(response.error || 'Generation failed');
     }
