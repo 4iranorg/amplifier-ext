@@ -546,6 +546,26 @@ a {
 }
 
 // --------------------------------------------------------------------------
+// Costs Section
+// --------------------------------------------------------------------------
+.costs {
+  padding: 60px 0;
+  background: var(--surface-primary);
+  text-align: center;
+
+  h2 {
+    font-size: $font-size-3xl;
+    font-weight: $font-weight-bold;
+    margin-bottom: $spacing-md;
+    letter-spacing: $letter-spacing-tight;
+  }
+
+  .section-subtitle {
+    margin-bottom: 0;
+  }
+}
+
+// --------------------------------------------------------------------------
 // CTA Section
 // --------------------------------------------------------------------------
 .cta {
@@ -690,6 +710,188 @@ a {
 .footer-copyright {
   font-size: $font-size-sm + 1;
   color: var(--text-secondary);
+}
+
+// --------------------------------------------------------------------------
+// Quick Start Page
+// --------------------------------------------------------------------------
+.quickstart-content {
+  max-width: 800px;
+  margin: 0 auto;
+
+  h1 {
+    font-size: $font-size-4xl;
+    font-weight: $font-weight-bold;
+    margin-bottom: $spacing-lg;
+    letter-spacing: $letter-spacing-tight;
+  }
+
+  .intro {
+    font-size: $font-size-xl;
+    color: var(--text-secondary);
+    margin-bottom: $spacing-4xl;
+    line-height: $line-height-relaxed;
+  }
+}
+
+.quickstart-section {
+  margin-bottom: $spacing-4xl;
+  padding-bottom: $spacing-3xl;
+  border-bottom: 1px solid var(--border-primary);
+
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  h2 {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-semibold;
+    margin-bottom: $spacing-lg;
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+  }
+
+  > p {
+    font-size: $font-size-base;
+    color: var(--text-secondary);
+    line-height: $line-height-relaxed;
+    margin-bottom: $spacing-xl;
+  }
+}
+
+.section-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: $accent-500;
+  color: #000;
+  border-radius: 50%;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+}
+
+.quickstart-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: step-counter;
+
+  li {
+    position: relative;
+    padding-left: $spacing-3xl;
+    margin-bottom: $spacing-xl;
+    counter-increment: step-counter;
+
+    &::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: 0;
+      top: 2px;
+      width: 24px;
+      height: 24px;
+      background: var(--surface-secondary);
+      border: 1px solid var(--border-primary);
+      border-radius: 50%;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: $accent-500;
+    }
+
+    strong {
+      display: block;
+      font-size: $font-size-base;
+      font-weight: $font-weight-semibold;
+      color: var(--text-primary);
+      margin-bottom: $spacing-xs;
+    }
+
+    p {
+      font-size: $font-size-md;
+      color: var(--text-secondary);
+      line-height: $line-height-relaxed;
+      margin: 0;
+    }
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.quickstart-note {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  margin-top: $spacing-xl;
+  font-size: $font-size-md;
+  color: var(--text-secondary);
+  line-height: $line-height-relaxed;
+
+  strong {
+    color: $accent-500;
+  }
+}
+
+.api-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: $spacing-xl;
+  margin-bottom: $spacing-xl;
+}
+
+.api-option {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-lg;
+  padding: $spacing-xl;
+
+  h3 {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $accent-500;
+    margin-bottom: $spacing-lg;
+  }
+
+  ol {
+    list-style: decimal;
+    padding-left: $spacing-xl;
+    margin: 0;
+
+    li {
+      font-size: $font-size-md;
+      color: var(--text-secondary);
+      line-height: $line-height-relaxed;
+      margin-bottom: $spacing-sm;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+.hero-quickstart {
+  font-size: $font-size-sm;
+  color: var(--text-secondary);
+  margin-top: $spacing-sm;
+
+  a {
+    color: $accent-500;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }
 
 // --------------------------------------------------------------------------
