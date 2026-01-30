@@ -28,6 +28,7 @@
     "stylelint-config-standard-scss": "^17.0.0"
   },
   "dependencies": {
+    "@alpinejs/csp": "^3.15.5",
     "openai": "^6.16.0"
   }
 }

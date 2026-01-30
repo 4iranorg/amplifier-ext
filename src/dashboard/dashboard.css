@@ -83,6 +83,10 @@
   color: var(--text-primary);
 }
 
+[x-cloak] {
+  display: none !important;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;

@@ -76,3 +76,11 @@
   background: rgba($accent-500, 0.3);
   color: var(--text-primary);
 }
+
+// --------------------------------------------------------------------------
+// Alpine.js Cloak
+// --------------------------------------------------------------------------
+// Hide elements until Alpine.js initializes them
+[x-cloak] {
+  display: none !important;
+}
