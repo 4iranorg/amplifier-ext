@@ -119,6 +119,13 @@ export const CONFIG_DEFAULTS = {
         'The Islamic Republic is a persistent source of regional instability, repression, terrorism, hostage-taking, nuclear escalation, and energy market disruption. Its removal would reduce conflict across the Middle East, weaken multiple extremist proxy networks, lower the risk of wider war, and improve global security, economic stability, and rule-based international order.',
       type: 'include',
     },
+    {
+      id: 1016,
+      title: 'Opposition to US-Iran talks and regime deals',
+      description:
+        "Iranian people firmly oppose US-Iran negotiations, viewing them as a betrayal after the January 2026 massacre that killed thousands. Talks risk normalizing regime violence and legitimizing a government that slaughters its own citizens. The only acceptable outcome is the regime's surrender to the people of Iran. Negotiations are driven by the regime's sheer necessity for survival, not genuine reform. International support should empower the Iranian people and democratic opposition, not stabilize the regime. Iranians have no representation in these talks and their interests are never prioritized. Prominent opposition voices and civil society have explicitly rejected any deal that does not lead to the regime's surrender.",
+      type: 'include',
+    },
     // Exclude arguments (always-on, not shown in UI)
     {
       id: 1015,
@@ -140,9 +147,9 @@ export const CONFIG_DEFAULTS = {
     },
     {
       id: 2002,
-      title: 'Enforce EU IRGC terrorist designation',
+      title: 'Enforce EU IRGC terrorist designation with concrete action',
       description:
-        'Welcome the EU designation of the IRGC as a terrorist organization (January 2026). Push for full enforcement: asset freezes, travel bans, cutting all financial ties with IRGC-linked entities, and urge other nations to follow.',
+        'Welcome the EU designation of the IRGC as a terrorist organization (January 2026), but demand concrete enforcement so it is not just a symbolic gesture. Concrete action means: closing Islamic Republic embassies across Europe, freezing all IRGC-linked assets, imposing travel bans, cutting all financial ties with IRGC-linked entities, and providing practical support to the Iranian opposition. Urge other nations to follow.',
       default: true,
     },
     {
@@ -161,9 +168,9 @@ export const CONFIG_DEFAULTS = {
     },
     {
       id: 2005,
-      title: 'Expel diplomats and downgrade relations',
+      title: 'Expel ambassadors and sever diplomatic relations',
       description:
-        'Call for expelling Iranian regime diplomats and closing or downgrading Islamic Republic embassies in democratic countries. No diplomatic legitimacy for a regime that massacres its own people.',
+        'Demand the expulsion of Islamic Republic ambassadors and the severing of all diplomatic relations with the regime. Close or downgrade embassies in democratic countries. The IRGC terrorist designation must be backed by cutting diplomatic ties, not just words. No diplomatic legitimacy for a regime that massacres its own people.',
       default: true,
     },
     {
@@ -199,6 +206,13 @@ export const CONFIG_DEFAULTS = {
       title: "Expel regime officials' families from the West",
       description:
         'Demand that Western governments identify and expel family members of Iranian regime officials who enjoy luxury lives in free countries while their families commit atrocities against Iranians. No safe haven for the families of murderers.',
+      default: true,
+    },
+    {
+      id: 2011,
+      title: 'No deals with the Islamic Republic — regime must surrender',
+      description:
+        "Oppose any deal, negotiation, or agreement with the Islamic Republic that does not result in the regime's surrender to the Iranian people. Reject nuclear deals or sanctions relief that extend the regime's lifespan. Redirect diplomatic efforts toward supporting democratic transition and the Iranian opposition. The only acceptable deal is one where the regime surrenders to the people of Iran.",
       default: true,
     },
   ],
@@ -267,9 +281,12 @@ export const CONFIG_DEFAULTS = {
 8. NEVER use em dashes (—) in responses. Use commas, periods, or colons instead.
 
 ## ULTIMATE MISSION
-The user's goal is the END of the Islamic Republic and transition to a democratic Iran. This is not about reforming the regime or improving relations - it's about exposing criminals and building support for regime change. Every response should serve this mission.
+The user's goal is the END of the Islamic Republic and transition to a democratic Iran. This is not about reforming the regime, improving relations, or negotiating deals. No deal or negotiation with the Islamic Republic is acceptable - the only acceptable outcome is the regime's surrender to the people of Iran. Every response should serve the mission of exposing criminals, building support for regime change, and opposing any diplomatic engagement that legitimizes or sustains the regime.
 
 ## RESPONSE LOGIC
+
+### Argument and CTA selection strategy (CRITICAL)
+Always select the ARGUMENT most relevant to the context and stance of the original tweet. Read the tweet carefully and match it to the argument that best fits the topic being discussed. For example, if the tweet is about negotiations or deals, prioritize the argument about opposition to US-Iran talks. If it is about violence against protesters, prioritize the mass killings or lethal force arguments. Each of the 3 responses should draw on the most contextually fitting argument rather than defaulting to generic talking points. Where relevant, reinforce the chosen argument with a matching CTA to provide a concrete policy demand that supports the point being made.
 
 ### Detecting regime officials or supporters
 Infer if the author is an Iranian regime official, state media, or regime supporter based on:
@@ -285,6 +302,16 @@ IMPORTANT: When someone criticizes another person/entity for being "pro-Iran" or
 - Calling out media figures who downplay regime atrocities
 - Exposing lobbyists or apologists for the regime
 In these cases, the author is on the same side as the Iranian people - respond by AFFIRMING and building on their point.
+
+### Detecting posts about US-Iran talks, negotiations, or deals
+When encountering posts about US-Iran talks, nuclear deals, sanctions relief, or any diplomatic engagement with the Islamic Republic:
+- Frame negotiations as a betrayal of the Iranian people who were massacred in the January 2026 crackdown
+- Emphasize that talks legitimize a regime that kills its own citizens and has no mandate to represent Iranians
+- The only acceptable deal is one where the regime surrenders to the people of Iran
+- Counter any narrative that diplomacy with the Islamic Republic serves peace - it serves regime survival, not the Iranian people
+- Reference the January 2026 crackdown as evidence that engagement with this regime is premature and immoral while blood is still fresh
+- Support and amplify voices calling for maximum pressure on the regime over negotiation
+- Do NOT name specific opposition figures - reinforce the collective stance of the Iranian people against any deal
 
 ### Response strategy by author type
 
