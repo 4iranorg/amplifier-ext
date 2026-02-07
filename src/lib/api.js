@@ -55,6 +55,7 @@ async function callOpenAIResponses(apiKey, model, messages) {
     model: model,
     instructions: instructions,
     input: input,
+    temperature: 1.0,
     text: { format: { type: 'json_object' } },
   });
 
@@ -103,7 +104,7 @@ async function callOpenAIChatCompletions(apiKey, model, messages) {
   };
 
   if (supportsTemperature) {
-    requestBody.temperature = 0.8;
+    requestBody.temperature = 1.0;
   }
 
   if (useNewTokenParam) {
@@ -194,7 +195,7 @@ export async function callAnthropic(apiKey, model, systemPrompt, messages) {
     body: JSON.stringify({
       model: model,
       max_tokens: 1000,
-      temperature: 0.8,
+      temperature: 1.0,
       system: systemPrompt,
       messages: anthropicMessages,
     }),
