@@ -3,25 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Quick Start Guide - Iran Amplifier</title>
+    <title>Developer Guide - Iran Amplifier</title>
     <meta
       name="description"
-      content="Get started with Iran Amplifier in minutes. Step-by-step installation guide for Firefox."
+      content="Load the latest development version of Iran Amplifier in Firefox. For developers and testers."
     />
     <!-- Open Graph -->
-    <meta property="og:title" content="Quick Start Guide - Iran Amplifier" />
+    <meta property="og:title" content="Developer Guide - Iran Amplifier" />
     <meta
       property="og:description"
-      content="Get started with Iran Amplifier in minutes. Step-by-step installation guide for Firefox."
+      content="Load the latest development version of Iran Amplifier in Firefox. For developers and testers."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://amplifier.4iran.org/quickstart.html" />
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Quick Start Guide - Iran Amplifier" />
+    <meta name="twitter:title" content="Developer Guide - Iran Amplifier" />
     <meta
       name="twitter:description"
-      content="Get started with Iran Amplifier in minutes. Step-by-step installation guide for Firefox."
+      content="Load the latest development version of Iran Amplifier in Firefox. For developers and testers."
     />
     <!-- Canonical URL -->
     <link rel="canonical" href="https://amplifier.4iran.org/quickstart.html" />
@@ -39,8 +39,11 @@
           <h1>Iran Amplifier</h1>
         </a>
         <div class="header-actions">
-          <a href="https://github.com/4iranorg/amplifier-ext/releases" class="btn primary small">
-            Download
+          <a
+            href="https://addons.mozilla.org/en-US/firefox/addon/iran-amplifier/"
+            class="btn primary small"
+          >
+            Add to Firefox
           </a>
         </div>
       </div>
@@ -50,35 +53,47 @@
     <main class="page-content">
       <div class="container">
         <div class="quickstart-content">
-          <h1>Quick Start Guide</h1>
+          <h1>Developer Guide</h1>
           <p class="intro">
-            Get Iran Amplifier running in about 5 minutes. This guide walks you through installing
-            the extension and setting up your AI service.
+            Want to test the latest unreleased changes or contribute to development? This guide
+            shows you how to load Iran Amplifier directly from source in Firefox.
+          </p>
+          <p class="intro">
+            <strong>Most users should
+              <a
+                href="https://addons.mozilla.org/en-US/firefox/addon/iran-amplifier/"
+                target="_blank"
+                rel="noopener"
+                >install from Firefox Add-ons</a
+              >
+              instead.</strong
+            >
           </p>
 
           <!-- Section 1: Install -->
           <section class="quickstart-section">
             <h2>
               <span class="section-number">1</span>
-              Install the Extension
+              Load the Development Version
             </h2>
             <p>
-              Iran Amplifier is currently in development. To use it, you'll load it manually in
-              Firefox's developer mode. This is quick and safe.
+              Download the latest code from GitHub and load it as a temporary add-on in Firefox.
             </p>
 
             <ol class="quickstart-steps">
               <li>
-                <strong>Download the extension</strong>
+                <strong>Download the source</strong>
                 <p>
                   Go to the
-                  <a href="https://github.com/4iranorg/amplifier-ext/releases">releases page</a> and
-                  download the latest <code>.zip</code> file.
+                  <a
+                    href="https://github.com/4iranorg/amplifier-ext/releases"
+                    target="_blank"
+                    rel="noopener"
+                    >releases page</a
+                  >
+                  and download the latest <code>.zip</code> file, or clone the repository:
                 </p>
-              </li>
-              <li>
-                <strong>Extract the zip</strong>
-                <p>Unzip the file to a folder on your computer. Remember where you put it.</p>
+                <p><code>git clone https://github.com/4iranorg/amplifier-ext.git</code></p>
               </li>
               <li>
                 <strong>Open Firefox debugging</strong>
@@ -94,14 +109,14 @@
               <li>
                 <strong>Select the manifest</strong>
                 <p>
-                  Navigate to your extracted folder and select the <code>manifest.json</code> file.
+                  Navigate to the extension folder and select the <code>manifest.json</code> file.
                 </p>
               </li>
             </ol>
 
             <div class="quickstart-note">
               <strong>Note:</strong> Temporary add-ons are removed when Firefox closes. You'll need
-              to reload the extension each time you restart Firefox using the same steps above.
+              to reload the extension each time you restart Firefox.
             </div>
           </section>
 
@@ -272,7 +287,7 @@
             </a>
           </div>
           <div class="footer-links">
-            <a href="quickstart.html">Quick Start</a>
+            <a href="quickstart.html">Developer Guide</a>
             <a href="https://github.com/4iranorg/amplifier-ext" target="_blank">GitHub</a>
             <a href="privacy.html">Privacy Policy</a>
             <a href="terms.html">Terms of Service</a>
