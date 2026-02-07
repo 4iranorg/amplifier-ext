@@ -6,6 +6,141 @@
 import { createFlagIcon, createIcon } from './icons.js';
 
 /**
+ * Find the tweet article element on the page by tweet ID
+ * @param {string} tweetId - The tweet ID to find
+ * @returns {Element|null} The tweet article element or null
+ */
+function findTweetElement(tweetId) {
+  if (!tweetId) {
+    return null;
+  }
+  const articles = document.querySelectorAll('article[data-testid="tweet"]');
+  for (const article of articles) {
+    const link = article.querySelector(`a[href*="/status/${tweetId}"]`);
+    if (link) {
+      return article;
+    }
+  }
+  return null;
+}
+
+/**
+ * Wait for a new element matching a selector, ignoring pre-existing ones.
+ * @param {string} selector - CSS selector to match
+ * @param {Element} parent - Parent element to observe
+ * @param {number} timeoutMs - Maximum wait time in milliseconds
+ * @param {Set<Element>} [exclude] - Elements already present to skip
+ * @returns {Promise<Element|null>} The new element or null on timeout
+ */
+function waitForElement(selector, parent, timeoutMs, exclude = new Set()) {
+  return new Promise((resolve) => {
+    const findNew = () => {
+      for (const el of parent.querySelectorAll(selector)) {
+        if (!exclude.has(el)) {
+          return el;
+        }
+      }
+      return null;
+    };
+
+    const found = findNew();
+    if (found) {
+      resolve(found);
+      return;
+    }
+
+    let resolved = false;
+    const observer = new MutationObserver(() => {
+      const el = findNew();
+      if (el && !resolved) {
+        resolved = true;
+        observer.disconnect();
+        resolve(el);
+      }
+    });
+
+    observer.observe(parent, { childList: true, subtree: true });
+
+    setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        observer.disconnect();
+        resolve(null);
+      }
+    }, timeoutMs);
+  });
+}
+
+/**
+ * Insert text into X/Twitter's rich text editor (DraftJS-based).
+ * The tweetTextarea_0 wrapper contains a contenteditable div with
+ * <br data-text="true"> when empty, replaced by <span data-text="true">
+ * when text is present.
+ * @param {Element} editorElement - The tweetTextarea_0 wrapper or contenteditable element
+ * @param {string} text - Text to insert
+ * @returns {boolean} Whether insertion succeeded
+ */
+function insertTextIntoEditor(editorElement, text) {
+  try {
+    // Find the actual contenteditable element inside the wrapper
+    const editable = editorElement.querySelector('[contenteditable="true"]') || editorElement;
+
+    editable.focus();
+
+    // 1. Primary: simulate paste via ClipboardEvent
+    //    DraftJS handles paste as a single atomic operation via handlePastedText,
+    //    which avoids the per-character hashtag decorator duplication that
+    //    execCommand('insertText') triggers.
+    const clipboardData = new DataTransfer();
+    clipboardData.setData('text/plain', text);
+    const pasteEvent = new ClipboardEvent('paste', {
+      clipboardData,
+      bubbles: true,
+      cancelable: true,
+    });
+    editable.dispatchEvent(pasteEvent);
+    if (editable.textContent.includes(text)) {
+      return true;
+    }
+
+    // 2. Fallback: execCommand insertText (for editors that don't handle paste events)
+    document.execCommand('selectAll', false, null);
+    const success = document.execCommand('insertText', false, text);
+    if (success && editable.textContent.includes(text)) {
+      return true;
+    }
+
+    // 3. Last resort: InputEvent paste simulation
+    const dt = new DataTransfer();
+    dt.setData('text/plain', text);
+    editable.dispatchEvent(
+      new InputEvent('beforeinput', {
+        inputType: 'insertFromPaste',
+        data: text,
+        dataTransfer: dt,
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+
+    return editable.textContent.includes(text);
+  } catch (_err) {
+    return false;
+  }
+}
+
+/**
+ * Dismiss the currently open X/Twitter dialog (reply/quote compose).
+ * Sends Escape to let the platform close it cleanly.
+ */
+function dismissOpenDialog() {
+  const dialog = document.querySelector('[role="dialog"]');
+  if (dialog) {
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  }
+}
+
+/**
  * Alpine component data for the amplifier panel
  * @returns {Object} Alpine component data
  */
@@ -302,10 +437,10 @@ export function amplifierPanelComponent() {
     },
 
     /**
-     * Open reply intent
+     * Open reply via Web Intent (fallback)
      * @param {Object} response - Response object
      */
-    openReply(response) {
+    openReplyViaIntent(response) {
       const tweetId = this.tweetData?.tweetId;
       if (tweetId) {
         const replyUrl = `https://twitter.com/intent/tweet?in_reply_to=${tweetId}&text=${encodeURIComponent(response.text)}`;
@@ -316,16 +451,146 @@ export function amplifierPanelComponent() {
     },
 
     /**
-     * Open quote intent
+     * Open quote via Web Intent (fallback)
      * @param {Object} response - Response object
      */
-    openQuote(response) {
+    openQuoteViaIntent(response) {
       const tweetUrl = this.tweetData?.url;
       if (tweetUrl) {
         const quoteIntentUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(tweetUrl)}&text=${encodeURIComponent(response.text)}`;
         window.open(quoteIntentUrl, 'amplifier-intent', 'width=620,height=720,noopener,noreferrer');
         browser.runtime.sendMessage({ type: 'recordAmplification', action: 'quote' });
         this.hide();
+      }
+    },
+
+    /**
+     * Open reply using native X/Twitter dialog, falling back to Web Intent
+     * @param {Object} response - Response object
+     */
+    async openReply(response) {
+      try {
+        const tweetEl = findTweetElement(this.tweetData?.tweetId);
+        if (!tweetEl) {
+          this.openReplyViaIntent(response);
+          return;
+        }
+
+        const replyBtn = tweetEl.querySelector('[data-testid="reply"]');
+        if (!replyBtn) {
+          this.openReplyViaIntent(response);
+          return;
+        }
+
+        // Snapshot existing textareas so we wait for the NEW dialog one
+        const existingEditors = new Set(
+          document.body.querySelectorAll('[data-testid="tweetTextarea_0"]')
+        );
+
+        replyBtn.click();
+
+        const editor = await waitForElement(
+          '[data-testid="tweetTextarea_0"]',
+          document.body,
+          2000,
+          existingEditors
+        );
+        if (!editor) {
+          this.openReplyViaIntent(response);
+          return;
+        }
+
+        const inserted = insertTextIntoEditor(editor, response.text);
+        if (!inserted) {
+          // Close the dialog before falling back to intent
+          dismissOpenDialog();
+          this.openReplyViaIntent(response);
+          return;
+        }
+
+        browser.runtime.sendMessage({ type: 'recordAmplification', action: 'reply' });
+        this.hide();
+      } catch (_err) {
+        this.openReplyViaIntent(response);
+      }
+    },
+
+    /**
+     * Open quote using native X/Twitter dialog, falling back to Web Intent
+     * @param {Object} response - Response object
+     */
+    async openQuote(response) {
+      try {
+        const tweetEl = findTweetElement(this.tweetData?.tweetId);
+        if (!tweetEl) {
+          this.openQuoteViaIntent(response);
+          return;
+        }
+
+        const repostBtn =
+          tweetEl.querySelector('[data-testid="retweet"]') ||
+          tweetEl.querySelector('[data-testid="unretweet"]');
+        if (!repostBtn) {
+          this.openQuoteViaIntent(response);
+          return;
+        }
+
+        repostBtn.click();
+
+        const dropdown = await waitForElement('[data-testid="Dropdown"]', document.body, 2000);
+        if (!dropdown) {
+          this.openQuoteViaIntent(response);
+          return;
+        }
+
+        const menuItems = dropdown.querySelectorAll('[role="menuitem"]');
+        let quoteItem = null;
+        for (const item of menuItems) {
+          const text = item.textContent.toLowerCase();
+          if (text.includes('quote')) {
+            quoteItem = item;
+            break;
+          }
+        }
+
+        if (!quoteItem) {
+          // Close dropdown before falling back
+          document.body.click();
+          this.openQuoteViaIntent(response);
+          return;
+        }
+
+        // Snapshot existing textareas so we wait for the NEW dialog one
+        const existingEditors = new Set(
+          document.body.querySelectorAll('[data-testid="tweetTextarea_0"]')
+        );
+
+        quoteItem.click();
+
+        const editor = await waitForElement(
+          '[data-testid="tweetTextarea_0"]',
+          document.body,
+          2000,
+          existingEditors
+        );
+        if (!editor) {
+          dismissOpenDialog();
+          this.openQuoteViaIntent(response);
+          return;
+        }
+
+        const inserted = insertTextIntoEditor(editor, response.text);
+        if (!inserted) {
+          // Close the dialog before falling back to intent
+          dismissOpenDialog();
+          this.openQuoteViaIntent(response);
+          return;
+        }
+
+        browser.runtime.sendMessage({ type: 'recordAmplification', action: 'quote' });
+        this.hide();
+      } catch (_err) {
+        this.openQuoteViaIntent(response);
       }
     },
 

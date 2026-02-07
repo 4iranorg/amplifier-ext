@@ -446,7 +446,11 @@ async function generateResponses(
       : `Generate 3 new ${responseType} variations.`;
   } else {
     // Initial generation request for this tab type
-    userInput = `Generate the 3 ${responseType} response variations for the original post above.`;
+    userInput = `Generate 3 ${responseType} responses. Each MUST use a different strategic angle:
+#1: Selective outrage or institutional hypocrisy framing
+#2: Legal credibility or international law framing
+#3: Moral clarity or direct emotional pressure
+Start each response with a completely different word. Never start with "Exactly".`;
   }
 
   // Build API-specific message structure using tab-specific history
