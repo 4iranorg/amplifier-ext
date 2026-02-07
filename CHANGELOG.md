@@ -5,6 +5,31 @@ All notable changes to Iran Amplifier will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-02-07
+
+### Added
+
+- Native compose dialog for Reply and Quote actions instead of Web Intent popups (#13)
+- Paste-based text insertion into X/Twitter's DraftJS editor with fallback chain (#13)
+- Anti-negotiation argument: opposition to US-Iran talks and regime deals (#12)
+- Anti-negotiation CTA: no deals with the Islamic Republic, regime must surrender (#12)
+- Prompt logic for detecting posts about US-Iran talks, negotiations, or deals (#12)
+- SEO meta tags, robots.txt, and sitemap for landing page (#9)
+
+### Changed
+
+- Reply and Quote buttons now open native X/Twitter compose dialog with pre-filled text (#13)
+- Web Intent popups retained as fallback when native dialog fails (#13)
+- Strengthened EU IRGC designation CTA to demand concrete enforcement actions (#12)
+- Strengthened diplomat expulsion CTA to demand full severing of diplomatic relations (#12)
+- Improved response voice: more authentic Iranian perspective, less analyst/reporter framing (#12)
+- Improved response opener variety: no more "Exactly" cliche, better category-based variation (#12)
+- Updated mission statement to explicitly oppose negotiations that sustain the regime (#12)
+
+### Fixed
+
+- Quote intent now uses separate `url` parameter instead of appending URL to text (#13)
+
 ## [0.2.0] - 2026-01-30
 
 ### Added
