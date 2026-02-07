@@ -322,8 +322,7 @@ export function amplifierPanelComponent() {
     openQuote(response) {
       const tweetUrl = this.tweetData?.url;
       if (tweetUrl) {
-        const textWithUrl = `${response.text} ${tweetUrl}`;
-        const quoteIntentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(textWithUrl)}`;
+        const quoteIntentUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(tweetUrl)}&text=${encodeURIComponent(response.text)}`;
         window.open(quoteIntentUrl, 'amplifier-intent', 'width=620,height=720,noopener,noreferrer');
         browser.runtime.sendMessage({ type: 'recordAmplification', action: 'quote' });
         this.hide();
