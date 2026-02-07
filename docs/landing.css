@@ -428,6 +428,7 @@ a:hover {
 .features h2,
 .control h2,
 .how-it-works h2,
+.why-section h2,
 .cta h2 {
   font-size: 24px;
   font-weight: 700;
@@ -562,20 +563,13 @@ a:hover {
   line-height: 1.6;
 }
 
-.costs {
+.why-section {
   padding: 60px 0;
   background: var(--surface-primary);
   text-align: center;
 }
 
-.costs h2 {
-  font-size: 22px;
-  font-weight: 700;
-  margin-bottom: 12px;
-  letter-spacing: -0.02em;
-}
-
-.costs .section-subtitle {
+.why-section .section-subtitle {
   margin-bottom: 0;
 }
 
@@ -922,6 +916,7 @@ a:hover {
   .features,
   .control,
   .how-it-works,
+  .why-section,
   .cta {
     padding: 32px 0;
   }
@@ -929,6 +924,7 @@ a:hover {
   .features h2,
   .control h2,
   .how-it-works h2,
+  .why-section h2,
   .cta h2 {
     font-size: 22px;
   }

@@ -405,6 +405,7 @@ a {
 .features h2,
 .control h2,
 .how-it-works h2,
+.why-section h2,
 .cta h2 {
   font-size: $font-size-4xl;
   font-weight: $font-weight-bold;
@@ -546,19 +547,12 @@ a {
 }
 
 // --------------------------------------------------------------------------
-// Costs Section
+// Why Section
 // --------------------------------------------------------------------------
-.costs {
+.why-section {
   padding: 60px 0;
   background: var(--surface-primary);
   text-align: center;
-
-  h2 {
-    font-size: $font-size-3xl;
-    font-weight: $font-weight-bold;
-    margin-bottom: $spacing-md;
-    letter-spacing: $letter-spacing-tight;
-  }
 
   .section-subtitle {
     margin-bottom: 0;
@@ -914,6 +908,7 @@ a {
   .features,
   .control,
   .how-it-works,
+  .why-section,
   .cta {
     padding: $spacing-4xl 0;
   }
@@ -921,6 +916,7 @@ a {
   .features h2,
   .control h2,
   .how-it-works h2,
+  .why-section h2,
   .cta h2 {
     font-size: $font-size-3xl;
   }
