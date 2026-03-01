@@ -19,16 +19,16 @@
     "format:check": "prettier --check 'src/**/*.{js,json,html,css,scss}' '*.{json,md}'"
   },
   "devDependencies": {
-    "esbuild": "^0.27.2",
-    "eslint": "^9.39.2",
-    "globals": "^17.3.0",
+    "esbuild": "^0.27.3",
+    "eslint": "^10.0.2",
+    "globals": "^17.4.0",
     "prettier": "^3.8.1",
     "sass": "^1.97.3",
-    "stylelint": "^17.1.0",
+    "stylelint": "^17.4.0",
     "stylelint-config-standard-scss": "^17.0.0"
   },
   "dependencies": {
-    "@alpinejs/csp": "^3.15.6",
-    "openai": "^6.17.0"
+    "@alpinejs/csp": "^3.15.8",
+    "openai": "^6.25.0"
   }
 }
